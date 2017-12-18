@@ -1,0 +1,18 @@
+#*****Opitcal Chain*****
+#
+Element		Temp   Thick   Index   LossTan   Conduct   Absorb		Spill   SpillTemp   SurfaceRough  Refl    ScattFrac   ScattTemp
+#		[K]    [mm]            [e-4]     [e6 S/m]  NA        		NA      [K]         [um RMS]	  NA	  NA          [K]	
+Mirror		273.0  NA      NA      NA        NA	   [0.011,0.017]  	0.015   273.0       NA	          0.000   NA	      NA
+Mirror		273.0  NA      NA      NA        NA	   [0.011,0.017]  	NA      NA          NA	          0.000   NA	      NA	
+Mirror		273.0  NA      NA      NA        NA	   [0.011,0.017]  	NA      NA          NA	          0.000   NA	      NA
+Window		265.0  NA      NA      NA	 NA	   [0.014,0.017]	NA      NA          NA	          0.010   NA	      NA
+IRShaders	80.00  NA      NA      NA	 NA	   [0.001,0.001]	NA      NA          NA	          0.000   NA	      NA
+IRShaders	40.00  NA      NA      NA	 NA	   [0.001,0.001]	NA      NA          NA	          0.000   NA	      NA	 
+LowPass		10.00  NA      NA      NA	 NA	   [0.010,0.010]	NA      NA          NA	          0.050   NA	      NA		
+Lens		4.500  NA      NA      NA	 NA	   [0.013,0.016]	NA      NA          NA	          0.006   NA	      NA
+Lens		1.200  NA      NA      NA	 NA	   [0.013,0.016]	NA      NA          NA	          0.006   NA	      NA
+Aperture	1.200  NA      NA      NA	 NA	   NA	       		NA      NA          NA	          NA	  NA	      NA
+Lens		1.200  NA      NA      NA	 NA	   [0.013,0.016]	NA      NA          NA	          0.006   NA	      NA
+LowPass		1.200  NA      NA      NA	 NA	   [0.010,0.010]	NA      NA          NA	          0.050   NA	      NA	 		
+LowPass		1.200  NA      NA      NA	 NA	   [0.010,0.010]	NA      NA          NA	          0.050   NA	      NA		
+LowPass		0.100  NA      NA      NA	 NA	   [0.010,0.010]	NA      NA          NA	          0.050   NA	      NA		

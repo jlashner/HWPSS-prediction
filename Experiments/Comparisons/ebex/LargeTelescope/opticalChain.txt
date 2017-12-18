@@ -1,0 +1,14 @@
+#*****Opitcal Chain*****
+#
+Element		Temp   Thick   Index   LossTan   Conduct   Absorb		Spill   SpillTemp   SurfaceRough  Refl    ScattFrac   ScattTemp
+#		[K]    [mm]            [e-4]     [e6 S/m]  NA        		NA      [K]         [um RMS]	  NA	  NA          [K]	
+Mirror		290.0  NA      NA      NA    NA	   [0.0027,0.00349]  	0.015  273.0       NA	          0.000   NA	      NA
+Mirror		290.0  NA      NA      NA    NA	   [0.0027,0.00349]  	NA      NA          NA	          0.000   NA	      NA	
+Window		263.0  NA      NA      NA	 NA	   [0.00074,0.00175]	NA      NA          NA	          0.020   NA	      NA
+TFilter		110.0  NA      NA      NA	 NA	   [0.0091,0.0174]	NA      NA          NA	          0.080   NA	      NA
+LPE1		95.00  NA      NA      NA	 NA	   [0.0009,0.0035]	NA      NA          NA	          0.020   NA	      NA
+LPE2		20.00  NA      NA      NA	 NA	   [0.0012,0.0049]	NA      NA          NA	          0.020   NA	      NA
+FieldLens	9.00  NA      NA      NA	 NA	   [0.0137,0.0318]	NA      NA          NA	          0.020   NA	      NA
+LPE2b		7.00  NA      NA      NA	 NA	   [0.0013,0.0052]	NA      NA          NA	          0.020   NA	      NA
+PupLens		1.5  NA      NA      NA	 	NA	   [0.0257,0.0594]	NA      NA          NA	          0.020   NA	      NA
+Grid		2.5  NA      NA      NA		 NA	   [0.0,0.0]		NA      NA          NA	          0.500	  NA	      NA

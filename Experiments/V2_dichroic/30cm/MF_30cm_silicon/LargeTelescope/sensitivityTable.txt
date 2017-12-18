@@ -1,0 +1,5 @@
+Freq       FBW        PixSz      NumDet     ApertEff   EdgeTap    Popt       NEPph      NEPbolo    NEPread    NEPdet     NETdet     NETarr     Mapping Speed  Map Depth  
+[GHz]                 [mm]                  [%]        [dB]       [pW]       [aW/rtHz]  [aW/rtHz]  [aW/rtHz]  [aW/rtHz]  [uK-rtSec] [uK-rtSec] [(uK^2 s)^-1]  [uK-arcmin]
+93.0       0.38       5.3        864        46.04      -2.68      2.01       21.91      11.22      11.28      27.08      218.39     8.88       0.0127         14.71      
+145.0      0.28       5.3        864        71.26      -5.41      4.06       40.07      15.94      19.76      47.44      298.03     12.12      0.0068         20.08      
+Total                            1728                                                                                               7.16       0.0195         11.87      

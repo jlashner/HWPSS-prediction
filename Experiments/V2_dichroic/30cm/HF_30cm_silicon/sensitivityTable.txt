@@ -1,0 +1,5 @@
+Freq       FBW        NumDet     NETarr     Mapping Speed  Map Depth  
+[GHz]                            [uK-rtSec] [(uK^2 s)^-1]  [uK-arcmin]
+145.0      0.28       1176       10.39      0.0093         17.22      
+233.0      0.32       1176       25.09      0.0016         41.58      
+Total                 2352       9.60       0.0108         15.91      

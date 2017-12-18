@@ -1,0 +1,8 @@
+bandID: 1 	 freq: 225.00 GHz
+Name			Incident UP(pW)		UP Output (pW) 		PP Output (pW)
+----------------------------------------------------------------------
+
+7.642585e-02 pW / Kcmb
+
+Final output up:	8.242827e+00 pW 	 1.078539e+02 Kcmb
+Final output pp:	4.943740e-02 pW 	 6.468675e-01 Kcmb
