@@ -6,6 +6,8 @@ import thermo as th
 import OpticalElement as opt
 import Detector as dt
 import matplotlib.pyplot as plt
+import os
+import json
 
 Tcmb = 2.725 # CMB temp [K]
 
@@ -14,24 +16,34 @@ GHz = 1.e9 # GHz -> Hz
 pW = 1.e12 # W -> pW
 
 class Telescope:
-    def __init__(self, expDir, atmFile, hwpFile, bandID, theta = None, writeFile = False):
+    def __init__(self, config):
         
-        channelFile = expDir + "channels.txt"
-        cameraFile = expDir + "camera.txt"
-        opticsFile = expDir + "opticalChain.txt"
+        self.config = config
+        
+        expDir = config["ExperimentDirectory"]
+        atmFile = config["AtmosphereFile"]
+        hwpFile = config["HWPFile"]
+        if not expDir:
+            print "experiment directory not defined"
+            raise AttributeError
+        
+        channelFile = os.path.join(expDir, "channels.txt")
+        cameraFile =  os.path.join(expDir, "camera.txt")
+        opticsFile =  os.path.join(expDir, "opticalChain.txt")
         
         
         #Imports detector data 
-        self.det = dt.Detector(channelFile, cameraFile, bandID)
+        self.det = dt.Detector(channelFile, cameraFile, config["bandID"], config)
+        
         self.freqs = np.linspace(self.det.flo, self.det.fhi, 400) #Frequency array of the detector
+
         
         """Creating the Optical Chain"""
         self.elements = [] #List of optical elements
-
     
         self.elements.append(opt.OpticalElement("CMB", self.det, 2.725, {"Absorb": 1}))         #CMB 
         self.elements.append( opt.loadAtm(atmFile, self.det))     #Atmosphere
-        self.elements += opt.loadOpticalChain(opticsFile, self.det, theta=theta)       #Optical Chain
+        self.elements += opt.loadOpticalChain(opticsFile, self.det, theta=config["theta"])       #Optical Chain
         self.elements.append(opt.OpticalElement("Detector", self.det, self.det.bath_temp, {"Absorb": 1 - self.det.det_eff})) #Detector
         
         #Finds HWP
@@ -49,7 +61,6 @@ class Telescope:
         self.toKcmb = 1/intg.quad(aniSpec, self.det.flo, self.det.fhi)[0]
         #Conversion from pW to KRJ
         self.toKRJ = 1 /(th.kB *self.det.band_center * self.det.fbw)
-
         
         #Propagates Unpolarized Spectrum through each element
         self.propSpectrum()
@@ -58,7 +69,27 @@ class Telescope:
         self.getA2()
         self.geta4()
         self.getA4()
+        
+        if config["WriteOutput"]:
+            self.writeOutput(os.path.join(expDir, config["OutputDirectory"]))
                  
+            
+    def writeOutput(self, outputDir):
+        if not os.path.isdir(outputDir):
+            os.makedirs(outputDir)
+            
+        opticalTableFilename =  os.path.join(outputDir, "opticalTable.txt")
+        configFilename =  os.path.join(outputDir, "config.json")
+         
+        with open(opticalTableFilename, 'w') as opticalTableFile:
+            opticalTableFile.write(self.displayTable())
+
+        with open(configFilename, 'w') as configFile:
+            json.dump(self.config, configFile, sort_keys=True, indent=4)
+        
+
+        
+    
     def cumEff(self, index, freq):
         """Total efficiency of everthing after the i'th optical element"""
         cumEff = 1.
