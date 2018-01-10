@@ -80,12 +80,18 @@ class Telescope:
             
         opticalTableFilename =  os.path.join(outputDir, "opticalTable.txt")
         configFilename =  os.path.join(outputDir, "config.json")
-         
+        hwpssFilename = os.path.join(outputDir, "hwpss.txt")
+        
         with open(opticalTableFilename, 'w') as opticalTableFile:
-            opticalTableFile.write(self.displayTable())
+            opticalTableFile.write(self.opticalTable())
 
         with open(configFilename, 'w') as configFile:
             json.dump(self.config, configFile, sort_keys=True, indent=4)
+        
+        with open(hwpssFilename, 'w') as hwpssFile:
+            hwpssFile.write(self.hwpssTable())
+            
+
         
 
         
@@ -145,7 +151,27 @@ class Telescope:
         return "\t".join(map( lambda x: "%-8s" % x, row)) + "\n"
         
     
-    def displayTable(self):
+    def hwpssTable(self):
+        
+        tableString = ""
+        tableString += "Frequency: %i GHz\t fbw: %.3f\n"%(self.det.band_center/ GHz, self.det.fbw)
+        headers = ["Location",  "A4", "A4", "A2", "A2"]
+        units = ["", "[pW]", "[KRJ]", "[pW]", "[KRJ]"]
+        atDet = np.array([self.A4 * pW, self.A4 * self.toKRJ, self.A2 * pW, self.A2 * self.toKRJ])
+        atEntrance = atDet / self.cumEff(0, self.det.band_center)
+        
+        
+        
+        tableString += self._formatRow(headers)
+        tableString += self._formatRow(units)
+        tableString += "-"*70 + "\n"
+        
+        tableString += self._formatRow(["AtDetector"] + map(lambda x : "%.3e"%x, atDet ))
+        tableString += self._formatRow(["AtEntrance"] + map(lambda x : "%.3e"%x, atEntrance ))
+        
+        return tableString
+    
+    def opticalTable(self):
         
         headers = ["Element", "unpolInc", "unpolEmitted", "IP", "polEmitted"]
         units = ["", "[pW]", "[pW]", "[pW]", "[pW]"]

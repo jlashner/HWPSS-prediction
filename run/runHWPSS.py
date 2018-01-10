@@ -20,9 +20,9 @@ GHz = 10**9
 config = json.load( open ("config.json") )  
 tel = tp.Telescope(config)
 
-
 print "a2:", tel.a2 * 100
-print "A2 (KRJ)", tel.A2 /tel.cumEff(0, tel.det.band_center)  * pW
+print "A2 (KRJ)", tel.A2 /tel.cumEff(0, tel.det.band_center) * tel.toKRJ
+print "A2 (pW)", tel.A2 /tel.cumEff(0, tel.det.band_center)*pW
 print "A4 (KRJ)", tel.A4 /tel.cumEff(0, tel.det.band_center)  /th.kB / (tel.det.band_center * tel.det.fbw)
 print "Tel Efficiency", tel.cumEff(0, tel.det.band_center)
 
