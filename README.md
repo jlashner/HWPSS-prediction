@@ -10,6 +10,7 @@ To set up the pythonpath, run
 source env.sh
 ``` 
 from the root directory.
+This is dependent on the tmm package. You can easily install it through pip.
 
 ## Structure
 
