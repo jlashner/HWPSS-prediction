@@ -120,8 +120,8 @@ class OpticalElement:
         if self.name == "HWP":
             ao = 8.7*10**(-5) * (freq/ GHz) + 3.1*10**(-7)*(freq/GHz)**2 + (3.0)*10**(-10) * (freq/GHz)**3 #1/cm
             ae = 1.47*10**(-7) * (freq/GHz)**(2.2) #1/cm
-            Eotrans =  np.exp(self.params["Thick"]*100.0 * ao * self.temp/300) 
-            Eetrans =  np.exp(self.params["Thick"]*100.0 * ae * self.temp/300)
+            Eotrans =  np.exp(-self.params["Thick"]*100.0 * ao * self.temp/300) 
+            Eetrans =  np.exp(-self.params["Thick"]*100.0 * ae * self.temp/300)
             
             pemis = (abs(Eetrans)**2 - abs(Eotrans)**2) / 2            
             return pemis

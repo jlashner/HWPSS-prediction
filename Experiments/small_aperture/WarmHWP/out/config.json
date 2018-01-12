@@ -1,0 +1,13 @@
+{
+    "AtmosphereFile": "../src/Atacama_1000um_60deg.txt", 
+    "BandCenter": null, 
+    "ExperimentDirectory": "../Experiments/small_aperture/WarmHWP/", 
+    "FBW": null, 
+    "HWPFile": "../HWP_Mueller/AHWP_Mueller_90to150GHz_thetainc0deg.txt", 
+    "LowerFreq": null, 
+    "OutputDirectory": "out", 
+    "UpperFreq": null, 
+    "WriteOutput": true, 
+    "bandID": 2, 
+    "theta": 0.3488
+}

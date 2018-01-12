@@ -11,7 +11,6 @@ import thermo as th
 import numpy as np
 import matplotlib.pyplot as plt
 import json
-import simplejson
 from StringIO import StringIO
 
 pW = 10 ** 12
