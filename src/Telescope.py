@@ -100,9 +100,7 @@ class Telescope:
             elementsInBetween = self.elements[start+1:]
         else:
             elementsInBetween = self.elements[start+1:end]
-        
-        print [e.name for e in elementsInBetween]
-        
+                
         for e in elementsInBetween:
             cumEff *= e.Eff(freq)
             
@@ -152,7 +150,17 @@ class Telescope:
             polSpecTotal = e.polEmitted #Output from polarized emission
             polSpecTotal += e.polTransmitted #Output from polarized transmission
         
-            
+            #Contribution from multiple reflections with skyside elements 
+            #Loops over all pairs of elements
+            for (j, e2) in enumerate(self.elements[i:]):
+                # Light that is reflected by a later element and then polarized by e.
+                polSpecTotal += (e2.unpolIncident * e2.Refl(self.freqs) + e2.unpolEmitted) * e.pRefl(self.freqs) * self.cumEff(self.freqs, start=i, end=j)
+                
+                if j < self.hwpIndex:
+                    #Light that is polarized by a later element and then reflected by e.
+                    # e2 must be before HWP or else it will be modulated on the way back.
+                    polSpecTotal += (e2.unpolIncident * e2.pRefl(self.freqs) + e2.polEmitted) * e.Refl(self.freqs) * self.cumEff(self.freqs, start=i, end=j)
+                
             
         
             specAtDetector = polSpecTotal * self.cumEff(self.freqs, start=i)
