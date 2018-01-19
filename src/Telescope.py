@@ -17,7 +17,7 @@ pW = 1.e12 # W -> pW
 
 class Telescope:
     def __init__(self, config):
-        
+        """ Telescope object"""
         self.config = config
         
         expDir = config["ExperimentDirectory"]
@@ -92,16 +92,20 @@ class Telescope:
             hwpssFile.write(self.hwpssTable())
             
 
-        
-
-        
-    
-    def cumEff(self, index, freq):
-        """Total efficiency of everthing after the i'th optical element"""
+    def cumEff(self, freq, start=1, end=-1):
+        """Calculates the efficiency of all elements between the elements with indices "start" and "end" """
         cumEff = 1.
-        for i in range(index + 1, len(self.elements)):
-            cumEff *= self.elements[i].Eff(freq)
         
+        if end == -1:
+            elementsInBetween = self.elements[start+1:]
+        else:
+            elementsInBetween = self.elements[start+1:end]
+        
+        print [e.name for e in elementsInBetween]
+        
+        for e in elementsInBetween:
+            cumEff *= e.Eff(freq)
+            
         return cumEff
         
     
@@ -130,7 +134,7 @@ class Telescope:
     def getA2(self):
         """ Sets A2 power at the detector in pW"""        
         hwp = self.elements[self.hwpIndex]
-        spectrumAtDetector = (hwp.polEmitted + hwp.polTransmitted) * self.cumEff(self.hwpIndex, self.freqs)
+        spectrumAtDetector = (hwp.polEmitted + hwp.polTransmitted) * self.cumEff(self.freqs, start = self.hwpIndex)
         self.A2 = .5 * abs(th.powFromSpec(self.freqs, spectrumAtDetector))
     
     def geta4(self):
@@ -143,7 +147,15 @@ class Telescope:
         """Gets A4 power at the detector in pW"""        
         self.A4 = 0
         for (i,e) in enumerate(self.elements[:self.hwpIndex]):
-            specAtDetector = (e.polEmitted + e.polTransmitted) * self.cumEff(i, self.freqs)
+            
+            #polarized Spectrum outputted towards detector
+            polSpecTotal = e.polEmitted #Output from polarized emission
+            polSpecTotal += e.polTransmitted #Output from polarized transmission
+        
+            
+            
+        
+            specAtDetector = polSpecTotal * self.cumEff(self.freqs, start=i)
             ppTotal = .5 * abs(th.powFromSpec(self.freqs, specAtDetector))
             self.A4 += ppTotal    
 
@@ -158,7 +170,7 @@ class Telescope:
         headers = ["Location",  "A4", "A4", "A2", "A2"]
         units = ["", "[pW]", "[KRJ]", "[pW]", "[KRJ]"]
         atDet = np.array([self.A4 * pW, self.A4 * self.toKRJ, self.A2 * pW, self.A2 * self.toKRJ])
-        atEntrance = atDet / self.cumEff(0, self.det.band_center)
+        atEntrance = atDet / self.cumEff(self.det.band_center)
         
         
         

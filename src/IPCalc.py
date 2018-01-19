@@ -69,11 +69,12 @@ def getDiffCoeffs(name, band_center, fbw, theta):
     Ts, Rs, As = np.transpose(s_coeffs)
     Tp, Rp, Ap = np.transpose(p_coeffs)
     
-    #Band-averages differential transmission and absorption    
+    #Band-averages differential transmission, reflection and absorption    
     diffTrans =  abs(intg.simps((Ts - Tp)/2, freqs)/(band_center * fbw))
+    diffRefl  =  abs(intg.simps((Rs - Rp)/2, freqs)/(band_center * fbw))
     diffAbs   =  abs(intg.simps((As - Ap)/2, freqs)/(band_center * fbw))
     
-    return (diffTrans, diffAbs)
+    return (diffTrans, diffRefl, diffAbs)
 
 
 if __name__ == "__main__":

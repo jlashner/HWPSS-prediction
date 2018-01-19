@@ -32,6 +32,7 @@ class OpticalElement:
             :ScattTemp: Scattered Temperature [K]
             :SpillTemp: Spillover Temperature [K]
             :IP: IP value 
+            :PolRefl: Differential Reflection Coefficient
             :PolAbs: Polarized Absorption Coefficient
             :Chi: Incident angle of Mirror [rad]
             :Freqs: Frequency Array for 
@@ -47,7 +48,7 @@ class OpticalElement:
         #Sets Default Optical Element Parameters
         self.params = {"Thick": 0,      "Index": 1.0, "LossTan": 0, "Absorb": 0, \
                        "Absorb": 0,     "Spill": 0, "SpillTemp": 0, "Refl": 0, "ScattFrac": 0, \
-                       "ScattTemp": 0,  "IP": 0, "PolAbs": 0,  "Chi": 0, \
+                       "ScattTemp": 0,  "IP": 0, "PolRefl": 0, "PolAbs": 0,  "Chi": 0, \
                        "Freqs": None,   "EffCurve": None, "IPCurve": None, "EmisCurve": None, "PolEmisCurve": None};
         
         self.unpolIncident = None
@@ -127,7 +128,12 @@ class OpticalElement:
             return pemis
         
         return self.params["PolAbs"]
-
+    
+    def Refl(self, freq):
+        return self.params["Refl"]
+    
+    def pRefl(self, freq):
+        return self.params["PolRefl"]
 
 
 def loadAtm(atmFile, det):
@@ -181,8 +187,8 @@ def loadOpticalChain(opticsFile,det, theta = np.deg2rad(15./2)):
         
         ## Calculates differential transmission and absorption using tmm        
         if name == "AluminaF" or name == "Window":
-            (ip, polAbs) = IPCalc.getDiffCoeffs(name, det.band_center, det.fbw, theta)
-            params.update({"IP": ip, "PolAbs": polAbs})
+            (ip,polRefl, polAbs) = IPCalc.getDiffCoeffs(name, det.band_center, det.fbw, theta)
+            params.update({"IP": ip, "PolRefl": polRefl, "PolAbs": polAbs})
 
         e = OpticalElement(name, det, params["Temp"], params = params)        
         elements.append(e)
