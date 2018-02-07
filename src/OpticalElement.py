@@ -3,6 +3,7 @@ import thermo as th
 from scipy import interpolate
 from scipy import integrate as intg
 import matplotlib.pyplot as plt
+import transfer_matrix as tm
 
 import Detector as dt
 import IPCalc
@@ -17,6 +18,10 @@ eps0 = 8.85e-12 #Vacuum Permitivity
 rho=2.417e-8 #Resistivity of the mirror
 c = 299792458.0 #Speed of light [m/s]
 
+
+###############################################################################
+# Class of objects used for optical chain
+###############################################################################
 
 class OpticalElement:
     """ Optical Element
@@ -136,6 +141,9 @@ class OpticalElement:
         return self.params["PolRefl"]
 
 
+###############################################################################
+#    Loads individual types of Optical Elements
+###############################################################################
 def loadAtm(atmFile, det):
     """Loads an optical element from specified atmosphere file"""
     freqs, temps, trans = np.loadtxt(atmFile, dtype=np.float, unpack=True, usecols=[0, 2, 3]) #frequency/tempRJ/efficiency arrays from input files
@@ -154,6 +162,35 @@ def loadAtm(atmFile, det):
 #    e = OpticalElement("Atm", det, aveTemp, {"Freqs": freqs, "EffCurve": trans})
 #    
 #    return e
+
+
+def loadHWP(hwp, theta, det):
+    
+    #HWP Model
+    sapphire = tm.material( 3.07, 3.41, 2.3e-4, 1.25e-4, 'Sapphire', materialType='uniaxial')
+    duroid   = tm.material( 1.715, 1.715, 1.2e-3, 1.2e-3, 'RT Duroid', materialType='isotropic')
+    
+    thicknesses = [305e-6, 3.15*tm.mm, 305e-6]
+    materials   = [duroid, sapphire, duroid]
+    angles      = [0.0, 0.0, 0.0]
+    hwp_stack   = tm.Stack( thicknesses, materials, angles)
+    
+    ##Calculates Band Averaged Mueller Matrix
+    freqs = np.linspace(det.flo, det.fhi, 100)
+    
+    mueller_t = np.zeros((4, 4))
+    mueller_r = np.zeros((4, 4))
+    
+    for f in freqs:
+        mueller_t += tm.Mueller(hwp_stack, f, theta, 0, reflected = False)
+        mueller_r += tm.Mueller(hwp_stack, f, theta, 0, reflected = True)
+    
+    mueller_t /= len(freqs)
+    mueller_r /= len(freqs)
+
+    hwp.updateParams({"Mueller_T": mueller_t, "Mueller_R": mueller_r})
+    return
+
 
 def loadOpticalChain(opticsFile,det, theta = np.deg2rad(15./2)):
     """Returns list of optical elements from opticalChain.txt file. """

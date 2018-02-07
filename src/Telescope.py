@@ -42,19 +42,23 @@ class Telescope:
         self.elements = [] #List of optical elements
     
         self.elements.append(opt.OpticalElement("CMB", self.det, 2.725, {"Absorb": 1}))         #CMB 
-        self.elements.append( opt.loadAtm(atmFile, self.det))     #Atmosphere
+        self.elements.append(opt.loadAtm(atmFile, self.det))     #Atmosphere
         self.elements += opt.loadOpticalChain(opticsFile, self.det, theta=config["theta"])       #Optical Chain
         self.elements.append(opt.OpticalElement("Detector", self.det, self.det.bath_temp, {"Absorb": 1 - self.det.det_eff})) #Detector
         
         #Finds HWP
         try:
             self.hwpIndex = [e.name for e in self.elements].index("HWP")
+            self.hwp = self.elements[self.hwpIndex]
         except:
             print "No HWP in Optical Chain"
+       
         
+        opt.loadHWP(self.hwp, config["theta"], self.det)
+
         #Adds HWP curves 
         fs, T, rho, _, _ = np.loadtxt(hwpFile, dtype=np.float, unpack=True)
-        self.elements[self.hwpIndex].updateParams({"Freqs": fs, "EffCurve": T, "IPCurve": rho})
+        self.hwp.updateParams({"Freqs": fs, "EffCurve": T, "IPCurve": rho})
         
         #Calculates conversion from pW to Kcmb
         aniSpec  = lambda x: th.aniPowSpec(1, x, Tcmb)
@@ -63,17 +67,149 @@ class Telescope:
         self.toKRJ = 1 /(th.kB *self.det.band_center * self.det.fbw)
         
         #Propagates Unpolarized Spectrum through each element
-        self.propSpectrum()
-        
-        self.geta2()
-        self.getA2()
-        self.geta4()
-        self.getA4()
+        self.propSpectrum()        
+        self.getHWPSS()
         
         if config["WriteOutput"]:
             self.writeOutput(os.path.join(expDir, config["OutputDirectory"]))
                  
             
+
+    def cumEff(self, freq, start=1, end=-1):
+        """
+        Calculates the efficiency of all elements between the elements with indices "start" and "end" 
+        """
+        cumEff = 1.
+        
+        if end == -1:
+            elementsInBetween = self.elements[start+1:]
+        else:
+            elementsInBetween = self.elements[start+1:end]
+                
+        for e in elementsInBetween:
+            cumEff *= e.Eff(freq)
+            
+        return cumEff
+                
+    def propSpectrum(self):
+        """
+        Propagates power through each element of the optical chain.
+        For each element this function creates the spectra:
+            :(un)polIncident: Spectrum incident on the sky-side
+            :(un)polTransmitted: Spectrum transmitted through the element
+            :(un)polReverse: Spectrum incident on the detector side
+            :(un)polCreated: Spectrum added to the total signal by the element, through emission, Ip, or reflection
+        """
+        
+        for e in self.elements:
+            e.unpolIncident     = np.zeros(len(self.freqs))   # Unpol incident on element
+            e.unpolEmitted      = np.zeros(len(self.freqs))   # Unpol Emitted
+            e.unpolTransmitted  = np.zeros(len(self.freqs))   # Unpol transmitted by element
+            e.unpolReverse      = np.zeros(len(self.freqs))   # Unpol incident on det side of element
+            e.unpolCreated       = np.zeros(len(self.freqs))  # Unpol created by element 
+                                                              #(This includes reflected and emitted light)                                               
+            e.polIncident       = np.zeros(len(self.freqs))   # Pol incident on element
+            e.polTransmitted    = np.zeros(len(self.freqs))   # Pol transmitted by element
+            e.polReverse        = np.zeros(len(self.freqs))   # Pol incident on det side of element
+            e.polCreated         = np.zeros(len(self.freqs))  # Pol created by element
+            
+            e.polEmitted = np.zeros(len(self.freqs))
+            e.IpTransmitted = np.zeros(len(self.freqs))
+                                    
+            
+        ############################################
+        ### First order: No refelctions
+        for (i, e) in enumerate(self.elements):
+            e.unpolEmitted       = th.weightedSpec(self.freqs, e.temp, e.Emis)  # Unpolarized emitted
+            e.unpolCreated       = e.unpolEmitted
+            e.unpolTransmitted   = e.unpolIncident * e.Eff(self.freqs)          # Unpolarized transmitted
+            e.polEmitted         = th.weightedSpec(self.freqs, e.temp, e.pEmis) # Polarized emitted
+            e.IpTransmitted      = e.unpolIncident * e.Ip(self.freqs)           # IP polarization
+            e.polCreated = e.polEmitted + e.IpTransmitted
+            e.polTransmitted     = e.polIncident * e.pEff(self.freqs)           # Polarized transmitted light
+                
+            #Sets incident power on next element
+            if i + 1 < len(self.elements):
+                self.elements[i+1].unpolIncident    = e.unpolCreated + e.unpolTransmitted
+                self.elements[i+1].polIncident      = e.polCreated   + e.polTransmitted
+                
+        ############################################
+        ### Second Order: One reflection
+        ### Uses unpolarized incident from 1st order to calculate reflections
+        for (i, e) in enumerate(self.elements):
+            e.unpolCreated       = th.weightedSpec(self.freqs, e.temp, e.Emis)  # Unpolarized emitted
+            e.unpolTransmitted   = e.unpolIncident * e.Eff(self.freqs)          # Unpolarized transmitted
+            e.polEmitted         = th.weightedSpec(self.freqs, e.temp, e.pEmis) # Polarized emitted
+            e.IpTransmitted      = e.unpolIncident * e.Ip(self.freqs)           # IP polarization
+            e.polCreated         = e.polEmitted + e.IpTransmitted
+            e.polTransmitted     = e.polIncident * e.pEff(self.freqs)           # Polarized transmitted light
+            
+            for (j,e2) in enumerate(self.elements[i+1:]):
+                eff = self.cumEff(self.freqs, start = i, end = i+j)
+                e.unpolReverse +=  e2.unpolIncident * e2.Refl(self.freqs) * eff
+                e.unpolReverse +=  th.weightedSpec(self.freqs, e2.temp, e2.Emis) * eff
+                                
+                if (j < self.hwpIndex):
+                    e.polReverse += e2.polIncident * e2.Refl(self.freqs) * eff 
+                    e.polReverse += e2.unpolIncident * e2.pRefl(self.freqs) * eff
+            
+            e.unpolCreated += e.unpolReverse * e.Refl(self.freqs)
+            e.polCreated   += e.polReverse * e.Refl(self.freqs) + e.unpolReverse * e.pRefl(self.freqs)
+                
+            #Sets incident power on next element
+            if i + 1 < len(self.elements):
+                self.elements[i+1].unpolIncident    = e.unpolCreated + e.unpolTransmitted
+                self.elements[i+1].polIncident      = e.polCreated   + e.polTransmitted
+                
+            
+    def getHWPSS(self):
+        """
+        Calculates the expected HWPSS for the telescope. Computes a2, a4, A2, and A4.
+        """
+        hwp = self.hwp
+        
+        # Stokes params incident on HWP
+        IT      = hwp.unpolIncident + hwp.polIncident
+        QT      = hwp.polIncident
+        # Stokes parameters reflected by HWP
+        IR      = hwp.unpolReverse + hwp.polReverse
+        QR      = hwp.polReverse
+        #HWP Mueller matrices
+        MuellerT = hwp.params["Mueller_T"]
+        MuellerR = hwp.params["Mueller_R"]
+
+        #######################################################################
+        ####   A4 Calculation        
+        A4specTransmitted = (MuellerT[0,0] - MuellerT[2,2])/2. * QT * self.cumEff(self.freqs, start = self.hwpIndex)
+        A4specReflected   = (MuellerR[0,0] - MuellerR[2,2])/2. * QR * self.cumEff(self.freqs, start = self.hwpIndex)
+        self.A4  = abs(.5 * th.powFromSpec(self.freqs, A4specTransmitted))
+        self.A4 += abs(.5 * th.powFromSpec(self.freqs, A4specReflected))
+         
+        #######################################################################
+        ####   A2 Calculation 
+        A2specTransmitted  = (IT + QT) * MuellerT[0,1] * self.cumEff(self.freqs, start = self.hwpIndex)
+        A2specReflected    = (IR + QR) * MuellerR[0,1] * self.cumEff(self.freqs, start = self.hwpIndex)
+        A2specEmitted      = th.weightedSpec(self.freqs, self.hwp.temp, self.hwp.pEmis) * self.cumEff(self.freqs, start = self.hwpIndex) 
+        
+        self.A2  = abs(.5 * th.powFromSpec(self.freqs, A2specTransmitted))
+        self.A2 += abs(.5 * th.powFromSpec(self.freqs, A2specReflected))
+        self.A2 += abs(.5 * th.powFromSpec(self.freqs, A2specEmitted))
+        
+        #######################################################################
+        ####   a4 Calculation
+        self.a4  = 0
+        for e in self.elements[:self.hwpIndex]:
+            self.a4 += e.Ip(self.det.band_center)
+        
+        #######################################################################
+        ####   a2 Calculation
+        self.a2 = MuellerT[0,1]
+        
+
+
+    def _formatRow(self, row):
+        return "\t".join(map( lambda x: "%-8s" % x, row)) + "\n"
+        
     def writeOutput(self, outputDir):
         if not os.path.isdir(outputDir):
             os.makedirs(outputDir)
@@ -91,85 +227,6 @@ class Telescope:
         with open(hwpssFilename, 'w') as hwpssFile:
             hwpssFile.write(self.hwpssTable())
             
-
-    def cumEff(self, freq, start=1, end=-1):
-        """Calculates the efficiency of all elements between the elements with indices "start" and "end" """
-        cumEff = 1.
-        
-        if end == -1:
-            elementsInBetween = self.elements[start+1:]
-        else:
-            elementsInBetween = self.elements[start+1:end]
-                
-        for e in elementsInBetween:
-            cumEff *= e.Eff(freq)
-            
-        return cumEff
-        
-    
-    def propSpectrum(self):
-        
-        self.elements[0].unpolIncident = np.array([0 for _ in self.freqs])
-        
-        for (i, el) in enumerate(self.elements):
-            el.unpolTransmitted = el.unpolIncident * map(el.Eff, self.freqs)
-            el.unpolEmitted = th.weightedSpec(self.freqs, el.temp, el.Emis)
-            if i < len(self.elements) - 1:
-                self.elements[i+1].unpolIncident = el.unpolTransmitted + el.unpolEmitted
-            if i <= self.hwpIndex:
-                el.polTransmitted = el.unpolIncident * map(el.Ip, self.freqs)
-                el.polEmitted = th.weightedSpec(self.freqs, el.temp, el.pEmis)
-            else:
-                el.polTransmitted = [0 for _ in self.freqs]
-                el.polEmitted = [0 for _ in self.freqs]                
-            
-                        
-    def geta2(self):
-        """Gets a2 by band-averaging the HWP IP coefficient"""
-        hwp= self.elements[self.hwpIndex]
-        self.a2 = abs(np.average(map (hwp.Ip, self.freqs) ))
-
-    def getA2(self):
-        """ Sets A2 power at the detector in pW"""        
-        hwp = self.elements[self.hwpIndex]
-        spectrumAtDetector = (hwp.polEmitted + hwp.polTransmitted) * self.cumEff(self.freqs, start = self.hwpIndex)
-        self.A2 = .5 * abs(th.powFromSpec(self.freqs, spectrumAtDetector))
-    
-    def geta4(self):
-        """Gets a4 by adding IP of all elements before the HWP (at band center)."""
-        self.a4 = 0
-        for e in self.elements[:self.hwpIndex]:
-            self.a4 += e.Ip(self.det.band_center)
-        
-    def getA4(self):
-        """Gets A4 power at the detector in pW"""        
-        self.A4 = 0
-        for (i,e) in enumerate(self.elements[:self.hwpIndex]):
-            
-            #polarized Spectrum outputted towards detector
-            polSpecTotal = e.polEmitted #Output from polarized emission
-            polSpecTotal += e.polTransmitted #Output from polarized transmission
-        
-            #Contribution from multiple reflections with skyside elements 
-            #Loops over all pairs of elements
-            for (j, e2) in enumerate(self.elements[i:]):
-                # Light that is reflected by a later element and then polarized by e.
-                polSpecTotal += (e2.unpolIncident * e2.Refl(self.freqs) + e2.unpolEmitted) * e.pRefl(self.freqs) * self.cumEff(self.freqs, start=i, end=j)
-                
-                if j < self.hwpIndex:
-                    #Light that is polarized by a later element and then reflected by e.
-                    # e2 must be before HWP or else it will be modulated on the way back.
-                    polSpecTotal += (e2.unpolIncident * e2.pRefl(self.freqs) + e2.polEmitted) * e.Refl(self.freqs) * self.cumEff(self.freqs, start=i, end=j)
-                
-            
-        
-            specAtDetector = polSpecTotal * self.cumEff(self.freqs, start=i)
-            ppTotal = .5 * abs(th.powFromSpec(self.freqs, specAtDetector))
-            self.A4 += ppTotal    
-
-    def _formatRow(self, row):
-        return "\t".join(map( lambda x: "%-8s" % x, row)) + "\n"
-        
     
     def hwpssTable(self):
         
@@ -200,7 +257,7 @@ class Telescope:
         for e in self.elements:
             line = []
             line.append(e.name)
-            spectrums= [e.unpolIncident, e.unpolEmitted, e.polTransmitted, e.polEmitted]
+            spectrums= [e.unpolIncident, e.unpolEmitted, e.IpTransmitted, e.polEmitted]
             line += map(lambda x : "%.3e"%(abs(th.powFromSpec(self.freqs, x)*pW)), spectrums)
             rows.append(line)
             
@@ -218,16 +275,8 @@ class Telescope:
         
 
 if __name__=="__main__":
-    expDir = "../Experiments/small_aperture/LargeTelescope/"    
-    atmFile = "Atacama_1000um_60deg.txt"    
-    theta = 20
-    hwpFile = "../HWP_Mueller/Mueller_AR/Mueller_V2_nu150.0_no3p068_ne3p402_ARcoat_thetain%d.0.txt"%theta
-    bid = 2
-    
-    opts = {'theta': np.deg2rad(theta)}
-    
-    tel = Telescope(expDir, atmFile, hwpFile, bid, **opts)
-    
-    print tel.A2 * pW
-    print tel.A4 * pW
-    tel.displayTable()
+
+    config = json.load( open ("../run/config.json") )  
+    tel = Telescope(config)
+    print "Telescope A4: ", tel.A4 * pW
+    print "Telescope A2: ", tel.A2 * pW
