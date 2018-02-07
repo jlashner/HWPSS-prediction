@@ -70,6 +70,7 @@ class Telescope:
         self.propSpectrum()        
         self.getHWPSS()
         
+            
         if config["WriteOutput"]:
             self.writeOutput(os.path.join(expDir, config["OutputDirectory"]))
                  
@@ -91,75 +92,57 @@ class Telescope:
             
         return cumEff
                 
-    def propSpectrum(self):
+               
+    def propSpectrum(self, ReflectionOrder = 2):
         """
         Propagates power through each element of the optical chain.
         For each element this function creates the spectra:
             :(un)polIncident: Spectrum incident on the sky-side
             :(un)polTransmitted: Spectrum transmitted through the element
+            :(un)polEmitted: Spectrum emitted by element
             :(un)polReverse: Spectrum incident on the detector side
             :(un)polCreated: Spectrum added to the total signal by the element, through emission, Ip, or reflection
+            :IpTransmitted: Polarized light created through Ip
         """
         
         for e in self.elements:
             e.unpolIncident     = np.zeros(len(self.freqs))   # Unpol incident on element
-            e.unpolEmitted      = np.zeros(len(self.freqs))   # Unpol Emitted
-            e.unpolTransmitted  = np.zeros(len(self.freqs))   # Unpol transmitted by element
-            e.unpolReverse      = np.zeros(len(self.freqs))   # Unpol incident on det side of element
-            e.unpolCreated       = np.zeros(len(self.freqs))  # Unpol created by element 
-                                                              #(This includes reflected and emitted light)                                               
+            e.unpolEmitted      = th.weightedSpec(self.freqs, e.temp, e.Emis)     # Unpol Emitted
+
             e.polIncident       = np.zeros(len(self.freqs))   # Pol incident on element
-            e.polTransmitted    = np.zeros(len(self.freqs))   # Pol transmitted by element
-            e.polReverse        = np.zeros(len(self.freqs))   # Pol incident on det side of element
-            e.polCreated         = np.zeros(len(self.freqs))  # Pol created by element
+            e.polEmitted        = th.weightedSpec(self.freqs, e.temp, e.pEmis)     # Unpol Emitted
             
-            e.polEmitted = np.zeros(len(self.freqs))
-            e.IpTransmitted = np.zeros(len(self.freqs))
-                                    
-            
-        ############################################
-        ### First order: No refelctions
-        for (i, e) in enumerate(self.elements):
-            e.unpolEmitted       = th.weightedSpec(self.freqs, e.temp, e.Emis)  # Unpolarized emitted
-            e.unpolCreated       = e.unpolEmitted
-            e.unpolTransmitted   = e.unpolIncident * e.Eff(self.freqs)          # Unpolarized transmitted
-            e.polEmitted         = th.weightedSpec(self.freqs, e.temp, e.pEmis) # Polarized emitted
-            e.IpTransmitted      = e.unpolIncident * e.Ip(self.freqs)           # IP polarization
-            e.polCreated = e.polEmitted + e.IpTransmitted
-            e.polTransmitted     = e.polIncident * e.pEff(self.freqs)           # Polarized transmitted light
+        for n in range(ReflectionOrder):
+            for (i,e) in enumerate(self.elements):
+                e.unpolCreated = e.unpolEmitted
+                e.unpolTransmitted = e.unpolIncident * e.Eff(self.freqs)
+                e.IpTransmitted = e.unpolIncident * e.Ip(self.freqs)
+                e.polTransmitted = e.polIncident * e.pEff(self.freqs)
                 
-            #Sets incident power on next element
-            if i + 1 < len(self.elements):
-                self.elements[i+1].unpolIncident    = e.unpolCreated + e.unpolTransmitted
-                self.elements[i+1].polIncident      = e.polCreated   + e.polTransmitted
+
                 
-        ############################################
-        ### Second Order: One reflection
-        ### Uses unpolarized incident from 1st order to calculate reflections
-        for (i, e) in enumerate(self.elements):
-            e.unpolCreated       = th.weightedSpec(self.freqs, e.temp, e.Emis)  # Unpolarized emitted
-            e.unpolTransmitted   = e.unpolIncident * e.Eff(self.freqs)          # Unpolarized transmitted
-            e.polEmitted         = th.weightedSpec(self.freqs, e.temp, e.pEmis) # Polarized emitted
-            e.IpTransmitted      = e.unpolIncident * e.Ip(self.freqs)           # IP polarization
-            e.polCreated         = e.polEmitted + e.IpTransmitted
-            e.polTransmitted     = e.polIncident * e.pEff(self.freqs)           # Polarized transmitted light
-            
-            for (j,e2) in enumerate(self.elements[i+1:]):
-                eff = self.cumEff(self.freqs, start = i, end = i+j)
-                e.unpolReverse +=  e2.unpolIncident * e2.Refl(self.freqs) * eff
-                e.unpolReverse +=  th.weightedSpec(self.freqs, e2.temp, e2.Emis) * eff
-                                
-                if (j < self.hwpIndex):
-                    e.polReverse += e2.polIncident * e2.Refl(self.freqs) * eff 
-                    e.polReverse += e2.unpolIncident * e2.pRefl(self.freqs) * eff
-            
-            e.unpolCreated += e.unpolReverse * e.Refl(self.freqs)
-            e.polCreated   += e.polReverse * e.Refl(self.freqs) + e.unpolReverse * e.pRefl(self.freqs)
+                e.unpolReverse = np.zeros(len(self.freqs))
+                e.polReverse = np.zeros(len(self.freqs))
+                if n != 0:
+                    for (j,e2) in enumerate(self.elements[i+1:]):
+                        eff = self.cumEff(self.freqs, start = i, end = i + j)
+                        e.unpolReverse +=  e2.unpolIncident * e2.Refl(self.freqs) * eff
+                        e.unpolReverse +=  e2.unpolEmitted * eff
+                                        
+                        if (j < self.hwpIndex):
+                            e.polReverse += e2.polIncident * e2.Refl(self.freqs) * eff 
+                            e.polReverse += e2.unpolIncident * e2.pRefl(self.freqs) * eff
+                    
+                            
+                e.unpolCreated = e.unpolEmitted + e.unpolReverse * e.Refl(self.freqs)
+                e.polCreated = e.polEmitted + e.IpTransmitted + e.polReverse * e.Refl(self.freqs) + e.unpolReverse * e.pRefl(self.freqs)
                 
-            #Sets incident power on next element
-            if i + 1 < len(self.elements):
-                self.elements[i+1].unpolIncident    = e.unpolCreated + e.unpolTransmitted
-                self.elements[i+1].polIncident      = e.polCreated   + e.polTransmitted
+                #Sets incident power on next element
+                if i + 1 < len(self.elements):
+                    self.elements[i+1].unpolIncident    = e.unpolCreated + e.unpolTransmitted
+                    self.elements[i+1].polIncident      = e.polCreated   + e.polTransmitted
+                    
+                
                 
             
     def getHWPSS(self):
@@ -205,7 +188,6 @@ class Telescope:
         ####   a2 Calculation
         self.a2 = MuellerT[0,1]
         
-
 
     def _formatRow(self, row):
         return "\t".join(map( lambda x: "%-8s" % x, row)) + "\n"
