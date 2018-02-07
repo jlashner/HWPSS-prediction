@@ -20,16 +20,18 @@ class Telescope:
         """ Telescope object"""
         self.config = config
         
-        expDir = config["ExperimentDirectory"]
-        atmFile = config["AtmosphereFile"]
-        hwpFile = config["HWPFile"]
-        if not expDir:
-            print "experiment directory not defined"
-            raise AttributeError
+        expDir      = config["ExperimentDirectory"]
+        atmFile     = config["AtmosphereFile"]
+        hwpFile     = config["HWPFile"]
         
-        channelFile = os.path.join(expDir, "channels.txt")
-        cameraFile =  os.path.join(expDir, "camera.txt")
-        opticsFile =  os.path.join(expDir, "opticalChain.txt")
+        if not expDir:
+            raise AttributeError("Experiment directory not defined.")
+        if not atmFile:
+            raise AttributeError("Atmosphere file not defined.")
+        
+        channelFile     = os.path.join(expDir, "channels.txt")
+        cameraFile      =  os.path.join(expDir, "camera.txt")
+        opticsFile      =  os.path.join(expDir, "opticalChain.txt")
         
         
         #Imports detector data 
@@ -262,3 +264,5 @@ if __name__=="__main__":
     tel = Telescope(config)
     print "Telescope A4: ", tel.A4 * pW
     print "Telescope A2: ", tel.A2 * pW
+    
+    print tel.opticalTable()

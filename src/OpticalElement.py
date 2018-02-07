@@ -56,11 +56,11 @@ class OpticalElement:
                        "ScattTemp": 0,  "IP": 0, "PolRefl": 0, "PolAbs": 0,  "Chi": 0, \
                        "Freqs": None,   "EffCurve": None, "IPCurve": None, "EmisCurve": None, "PolEmisCurve": None};
         
-        self.unpolIncident = None
-        self.unpolTransmitted = None
-        self.unpolEmitted = None
-        self.polTransmitted = None
-        self.polEmitted = None
+        self.unpolIncident      = None
+        self.unpolTransmitted   = None
+        self.unpolEmitted       = None
+        self.polTransmitted     = None
+        self.polEmitted         = None
                        
         self.updateParams(params)
 
@@ -166,6 +166,51 @@ def loadAtm(atmFile, det):
 
 def loadHWP(hwp, theta, det):
     
+    #(extra)ordinary index of reflection and LossTan for HWP
+    n_e          = 3.38 
+    n_o          = 3.05
+    lossTan_e    = 1.25e-4
+    lossTan_o    = 2.30e-4
+    # n and lossTan for 1st and 2nd AR coatings
+    nAR1 = 1.55 
+    nAR2 = 2.52
+    lossTanAR1 = 5.0e-5
+    lossTanAR2 = 5.65e-3
+    
+    #Material definitions
+    AR1mat=tm.material(nAR1,nAR1,lossTanAR1,lossTanAR1,'PTFE','isotropic')      #top AR-layer
+    AR2mat=tm.material(nAR2,nAR2,lossTanAR2,lossTanAR2,'PTFE','isotropic')   #bottom AR-layer
+    HWPmat=tm.material(n_o,n_e,lossTan_o,lossTan_e,'Sapphire','uniaxial')  
+    mats = [AR1mat, AR2mat, HWPmat, HWPmat, HWPmat, AR2mat, AR1mat]
+    #Material thicknesses
+    HWPthick = 3.75e-3 
+    AR1thick = 3.8e-4
+    AR2thick = 2.7e-4
+    thicks = [AR1thick, AR2thick, HWPthick, HWPthick, HWPthick, AR2thick, AR1thick]
+    
+    angles  = [0., 0.,0., np.deg2rad(54.), 0., 0., 0.] #Rotation of each layer in stack
+    ff      = 120. * GHz           #Optimized frequency [Hz]
+    
+    stack = tm.Stack(thicks, mats, angles)           
+        
+    ##Calculates Band Averaged Mueller Matrix
+    freqs = np.linspace(det.flo, det.fhi, 100)
+    
+    mueller_t = np.zeros((4, 4))
+    mueller_r = np.zeros((4, 4))
+    
+    for f in freqs:
+        mueller_t += tm.Mueller(stack, f, theta, 0, reflected = False)
+        mueller_r += tm.Mueller(stack, f, theta, 0, reflected = True)
+    
+    mueller_t /= len(freqs)
+    mueller_r /= len(freqs)
+
+    hwp.updateParams({"Mueller_T": mueller_t, "Mueller_R": mueller_r})
+    return
+
+def loadHWPOld(hwp, theta, det):
+    
     #HWP Model
     sapphire = tm.material( 3.07, 3.41, 2.3e-4, 1.25e-4, 'Sapphire', materialType='uniaxial')
     duroid   = tm.material( 1.715, 1.715, 1.2e-3, 1.2e-3, 'RT Duroid', materialType='isotropic')
@@ -191,6 +236,7 @@ def loadHWP(hwp, theta, det):
     hwp.updateParams({"Mueller_T": mueller_t, "Mueller_R": mueller_r})
     return
 
+    
 
 def loadOpticalChain(opticsFile,det, theta = np.deg2rad(15./2)):
     """Returns list of optical elements from opticalChain.txt file. """

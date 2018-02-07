@@ -15,7 +15,6 @@ import scipy.integrate as intg
 
 
 #Constants
-
 c =2.99792458 * 10**8 #speed of light [m/s]
 
 #Units
