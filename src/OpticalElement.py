@@ -176,7 +176,6 @@ def loadHWP(hwp, theta, det):
     nAR2 = 2.52
     lossTanAR1 = 5.0e-5
     lossTanAR2 = 5.65e-3
-    lossTanAR2 = lossTanAR1
     
     #Material definitions
     AR1mat=tm.material(nAR1,nAR1,lossTanAR1,lossTanAR1,'PTFE','isotropic')      #top AR-layer
