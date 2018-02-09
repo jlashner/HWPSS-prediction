@@ -165,17 +165,18 @@ def loadAtm(atmFile, det):
 
 
 def loadHWP(hwp, theta, det):
-    
     #(extra)ordinary index of reflection and LossTan for HWP
     n_e          = 3.38 
     n_o          = 3.05
     lossTan_e    = 1.25e-4
     lossTan_o    = 2.30e-4
+#    lossTan_o = lossTan_e
     # n and lossTan for 1st and 2nd AR coatings
     nAR1 = 1.55 
     nAR2 = 2.52
     lossTanAR1 = 5.0e-5
     lossTanAR2 = 5.65e-3
+    lossTanAR2 = lossTanAR1
     
     #Material definitions
     AR1mat=tm.material(nAR1,nAR1,lossTanAR1,lossTanAR1,'PTFE','isotropic')      #top AR-layer
@@ -194,7 +195,7 @@ def loadHWP(hwp, theta, det):
     stack = tm.Stack(thicks, mats, angles)           
         
     ##Calculates Band Averaged Mueller Matrix
-    freqs = np.linspace(det.flo, det.fhi, 100)
+    freqs = det.freqs
     
     mueller_t = np.zeros((4, 4))
     mueller_r = np.zeros((4, 4))
@@ -208,34 +209,6 @@ def loadHWP(hwp, theta, det):
 
     hwp.updateParams({"Mueller_T": mueller_t, "Mueller_R": mueller_r})
     return
-
-def loadHWPOld(hwp, theta, det):
-    
-    #HWP Model
-    sapphire = tm.material( 3.07, 3.41, 2.3e-4, 1.25e-4, 'Sapphire', materialType='uniaxial')
-    duroid   = tm.material( 1.715, 1.715, 1.2e-3, 1.2e-3, 'RT Duroid', materialType='isotropic')
-    
-    thicknesses = [305e-6, 3.15*tm.mm, 305e-6]
-    materials   = [duroid, sapphire, duroid]
-    angles      = [0.0, 0.0, 0.0]
-    hwp_stack   = tm.Stack( thicknesses, materials, angles)
-    
-    ##Calculates Band Averaged Mueller Matrix
-    freqs = np.linspace(det.flo, det.fhi, 100)
-    
-    mueller_t = np.zeros((4, 4))
-    mueller_r = np.zeros((4, 4))
-    
-    for f in freqs:
-        mueller_t += tm.Mueller(hwp_stack, f, theta, 0, reflected = False)
-        mueller_r += tm.Mueller(hwp_stack, f, theta, 0, reflected = True)
-    
-    mueller_t /= len(freqs)
-    mueller_r /= len(freqs)
-
-    hwp.updateParams({"Mueller_T": mueller_t, "Mueller_R": mueller_r})
-    return
-
     
 
 def loadOpticalChain(opticsFile,det, theta = np.deg2rad(15./2)):

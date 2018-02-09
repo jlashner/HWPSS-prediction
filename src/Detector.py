@@ -23,6 +23,8 @@ class Detector:
 
         self.flo = self.band_center*(1 - .5 * self.fbw) #detector lower bound [Hz]
         self.fhi = self.band_center*(1 + .5 * self.fbw) #detector upper bound [Hz]
+        
+        self.freqs = np.linspace(self.flo, self.fhi, 400) #Frequency array of the detector
 
         if config["LowerFreq"] and config["UpperFreq"]:
             self.flo = config["LowerFreq"]

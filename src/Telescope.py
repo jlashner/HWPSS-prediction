@@ -37,7 +37,7 @@ class Telescope:
         #Imports detector data 
         self.det = dt.Detector(channelFile, cameraFile, config["bandID"], config)
         
-        self.freqs = np.linspace(self.det.flo, self.det.fhi, 400) #Frequency array of the detector
+        self.freqs = self.det.freqs #Frequency array of the detector
 
         
         """Creating the Optical Chain"""
@@ -56,7 +56,8 @@ class Telescope:
             print "No HWP in Optical Chain"
        
         
-        opt.loadHWP(self.hwp, config["theta"], self.det)
+#        opt.loadHWP(self.hwp, config["theta"], self.det)
+        opt.loadHWP(self.hwp, np.deg2rad(20.), self.det)
 
         #Adds HWP curves 
         fs, T, rho, _, _ = np.loadtxt(hwpFile, dtype=np.float, unpack=True)
@@ -121,8 +122,6 @@ class Telescope:
                 e.IpTransmitted = e.unpolIncident * e.Ip(self.freqs)
                 e.polTransmitted = e.polIncident * e.pEff(self.freqs)
                 
-
-                
                 e.unpolReverse = np.zeros(len(self.freqs))
                 e.polReverse = np.zeros(len(self.freqs))
                 if n != 0:
@@ -160,20 +159,25 @@ class Telescope:
         IR      = hwp.unpolReverse + hwp.polReverse
         QR      = hwp.polReverse
         #HWP Mueller matrices
-        MuellerT = hwp.params["Mueller_T"]
-        MuellerR = hwp.params["Mueller_R"]
+        MT = hwp.params["Mueller_T"]
+        MR = hwp.params["Mueller_R"]
 
         #######################################################################
         ####   A4 Calculation        
-        A4specTransmitted = (MuellerT[0,0] - MuellerT[2,2])/2. * QT * self.cumEff(self.freqs, start = self.hwpIndex)
-        A4specReflected   = (MuellerR[0,0] - MuellerR[2,2])/2. * QR * self.cumEff(self.freqs, start = self.hwpIndex)
-        self.A4  = abs(.5 * th.powFromSpec(self.freqs, A4specTransmitted))
-        self.A4 += abs(.5 * th.powFromSpec(self.freqs, A4specReflected))
+        A4specT = (MT[0,0] - MT[2,2])/2. * QT
+        A4specT = .5 * ((MT[1,2] + MT[2,1])**2 + (MT[1,1] - MT[2,2])**2)**(1/2) * QT
+        A4specT *= self.cumEff(self.freqs, start = self.hwpIndex)
+        A4specR  = (MR[0,0] - MR[2,2])/2. * QR
+        A4specR  = .5 * ((MR[1,2] + MR[2,1])**2 + (MR[1,1] - MR[2,2])**2)**(1/2) * QR
+        A4specR *= self.cumEff(self.freqs, start = self.hwpIndex)
+
+        self.A4  = abs(.5 * th.powFromSpec(self.freqs, A4specT))
+        self.A4 += abs(.5 * th.powFromSpec(self.freqs, A4specR))
          
         #######################################################################
         ####   A2 Calculation 
-        A2specTransmitted  = (IT + QT) * MuellerT[0,1] * self.cumEff(self.freqs, start = self.hwpIndex)
-        A2specReflected    = (IR + QR) * MuellerR[0,1] * self.cumEff(self.freqs, start = self.hwpIndex)
+        A2specTransmitted  = (IT + QT) * MT[0,1] * self.cumEff(self.freqs, start = self.hwpIndex)
+        A2specReflected    = (IR + QR) * MR[0,1] * self.cumEff(self.freqs, start = self.hwpIndex)
         A2specEmitted      = th.weightedSpec(self.freqs, self.hwp.temp, self.hwp.pEmis) * self.cumEff(self.freqs, start = self.hwpIndex) 
         
         self.A2  = abs(.5 * th.powFromSpec(self.freqs, A2specTransmitted))
@@ -188,7 +192,7 @@ class Telescope:
         
         #######################################################################
         ####   a2 Calculation
-        self.a2 = MuellerT[0,1]
+        self.a2 = MT[0,1]
         
 
     def _formatRow(self, row):
@@ -220,8 +224,6 @@ class Telescope:
         units = ["", "[pW]", "[KRJ]", "[pW]", "[KRJ]"]
         atDet = np.array([self.A4 * pW, self.A4 * self.toKRJ, self.A2 * pW, self.A2 * self.toKRJ])
         atEntrance = atDet / self.cumEff(self.det.band_center)
-        
-        
         
         tableString += self._formatRow(headers)
         tableString += self._formatRow(units)
@@ -261,8 +263,9 @@ class Telescope:
 if __name__=="__main__":
 
     config = json.load( open ("../run/config.json") )  
+    config["theta"] = np.deg2rad(20.)
     tel = Telescope(config)
-    print "Telescope A4: ", tel.A4 * pW
-    print "Telescope A2: ", tel.A2 * pW
+    print "Telescope A4: ", tel.A4 *tel.toKRJ / tel.cumEff(tel.det.band_center)
+    print "Telescope A2: ", tel.A2 *tel.toKRJ / tel.cumEff(tel.det.band_center)
+#    print tel.hwp.params["Mueller_T"]
     
-    print tel.opticalTable()
