@@ -46,29 +46,57 @@ def loadStack(materials, stackFile):
     angle = np.deg2rad(angle)
     return tm.Stack(thick, mats, angle)
     
-def fitAmplitudes(stack, freq, theta, stokes = np.array([1, 0, 0, 0]), makePlot = False):
+def fitAmplitudes(stack, freq, theta, stokes = np.array([1, 0, 0, 0]), makePlot = False, p = None):
     det = .5 * np.array([[1,1,0,0],[1,1,0,0],[0,0,0,0],[0,0,0,0]])    
     chis = np.linspace(0, 2 * np.pi, 100)
     demod = []
     for chi in chis:
         M = tm.Mueller(stack, freq, theta, chi, reflected = False)
         demod.append(det.dot(M).dot(stokes)[0])
-    
-    p = [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+    if p != None:
+        p = [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0]
     popt, pcov = optimize.curve_fit(demodFit, chis, demod, p)    
     if makePlot:
         testFit = demodFit(chis, *popt)
         plt.plot(chis, testFit)
         plt.plot(chis, demod, "o")
+        plt.show()
     
     
-    
-    return popt[2], popt[4]
+    return popt
 
+
+#plt.plot(freqs, A2pp)
+#plt.plot(freqs, A4pp)
+#plt.show()
 
 mats = loadMaterials("../HWP_Mueller/materials.txt")
 stack = loadStack(mats, "../HWP_Mueller/AHWP_stack.txt")
 Sunpol = np.array([1,0,0,0])
 Spol = np.array([1,1,0,0])
 
-print fitAmplitudes(stack, 150*GHz, np.deg2rad(20.), stokes = Spol)
+
+freqs = np.linspace(50 * GHz, 200 * GHz, 10)
+A2sup = []
+A4sup = []
+A2spp = []
+A4spp = []
+popt_up = None
+popt_pp = None
+for f in freqs:
+    print f/GHz
+    popt_up= fitAmplitudes(stack, f, np.deg2rad(20.), stokes = Sunpol, makePlot = False, p = popt_up)
+    A2sup.append(popt_up[2])
+    A4sup.append(popt_up[4])
+    
+    popt_pp = fitAmplitudes(stack, f, np.deg2rad(20.), stokes = Spol, makePlot = False, p = popt_pp)
+    A2spp.append(popt_pp[2])
+    A4spp.append(popt_pp[4])
+    
+labels = np.array(["freqs", "A2sup", "A4sup", "A2spp", "A4spp"])
+A2sup = np.array(A2sup)
+A2spp = np.array(A2spp)
+A4sup = np.array(A4sup)
+A4spp = np.array(A4spp)
+data = np.array([labels, freqs, A2sup, A4sup, A2spp, A4spp])
+np.save("../HWPSS_Trans", data)
