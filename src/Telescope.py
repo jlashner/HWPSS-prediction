@@ -52,7 +52,7 @@ class Telescope:
         try:
             self.hwpIndex = [e.name for e in self.elements].index("HWP")
             self.hwp = self.elements[self.hwpIndex]
-            self.hwp2 = HWP_model.HWP("../HWP/3LayerSapphire/", self.hwp.temp, config["theta"], det = self.det)
+            self.hwp2 = HWP_model.HWP("../HWP/3LayerSapphire/", self.hwp.temp, config["theta"],  self.det)
         except ValueError:
             print "No HWP in Optical Chain"
        
@@ -72,7 +72,7 @@ class Telescope:
         
         #Propagates Unpolarized Spectrum through each element
         self.propSpectrum()        
-        self.getHWPSS2()
+        self.getHWPSS2(fit = False)
         self.getHWPSS()
         
             
@@ -177,7 +177,19 @@ class Telescope:
         A4Trans = np.array(A4Trans) * eff
         A4Refl = np.array(A4Refl) * eff
         
-        print th.powFromSpec(self.freqs, A4Trans) + th.powFromSpec(self.freqs, A4Refl)
+        self.A4 =  th.powFromSpec(self.freqs, A4Trans) + th.powFromSpec(self.freqs, A4Refl)
+        self.A2 =  th.powFromSpec(self.freqs, A2Trans) + th.powFromSpec(self.freqs, A2Refl)
+        
+        #######################################################################
+        ####   a4 Calculation
+        self.a4  = 0
+        for e in self.elements[:self.hwpIndex]:
+            self.a4 += e.Ip(self.det.band_center)
+        
+        #######################################################################
+        ####   a2 Calculation
+        self.a2 = MT[0,1]
+
 
 
              
@@ -214,23 +226,15 @@ class Telescope:
          
         #######################################################################
         ####   A2 Calculation 
-        A2specTransmitted  = (IT + QT) * MT[0,1] * self.cumEff(self.freqs, start = self.hwpIndex)
-        A2specReflected    = (IR + QR) * MR[0,1] * self.cumEff(self.freqs, start = self.hwpIndex)
+        A2specTransmitted = .25 * (QT * QT * ((MT[1,2] + MT[2,1])**2 + (MT[1,1] - MT[2,2])**2))**.5
+        A2specReflected   = .25 * (QR * QR * ((MR[1,2] + MR[2,1])**2 + (MR[1,1] - MR[2,2])**2))**.5
         A2specEmitted      = th.weightedSpec(self.freqs, self.hwp.temp, self.hwp.pEmis) * self.cumEff(self.freqs, start = self.hwpIndex) 
         
         self.A2  = abs(.5 * th.powFromSpec(self.freqs, A2specTransmitted))
         self.A2 += abs(.5 * th.powFromSpec(self.freqs, A2specReflected))
         self.A2 += abs(.5 * th.powFromSpec(self.freqs, A2specEmitted))
         
-        #######################################################################
-        ####   a4 Calculation
-        self.a4  = 0
-        for e in self.elements[:self.hwpIndex]:
-            self.a4 += e.Ip(self.det.band_center)
-        
-        #######################################################################
-        ####   a2 Calculation
-        self.a2 = MT[0,1]
+
         
 
     def _formatRow(self, row):
