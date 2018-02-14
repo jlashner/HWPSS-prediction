@@ -1,5 +1,6 @@
 {
     "ExperimentDirectory": "../Experiments/small_aperture/LargeTelescope/",
+    "HWPDirectory": "../Experiments/HWP/3LayerSapphire/",
     "AtmosphereFile": "../src/Atacama_1000um_60deg.txt",
     "HWPFile": "../HWP_Mueller/AHWP_Mueller_90to150GHz_thetainc0deg.txt",
     "theta": 0.3488,

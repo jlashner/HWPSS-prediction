@@ -1,11 +1,11 @@
 
 import numpy as np
 import scipy.integrate as intg
-
 import thermo as th
 import OpticalElement as opt
 import Detector as dt
 import matplotlib.pyplot as plt
+import HWP_model
 import os
 import json
 
@@ -52,16 +52,17 @@ class Telescope:
         try:
             self.hwpIndex = [e.name for e in self.elements].index("HWP")
             self.hwp = self.elements[self.hwpIndex]
-        except:
+            self.hwp2 = HWP_model.HWP("../HWP/3LayerSapphire/", self.hwp.temp, config["theta"], det = self.det)
+        except ValueError:
             print "No HWP in Optical Chain"
        
         
 #        opt.loadHWP(self.hwp, config["theta"], self.det)
         opt.loadHWP(self.hwp, np.deg2rad(20.), self.det)
-
-        #Adds HWP curves 
-        fs, T, rho, _, _ = np.loadtxt(hwpFile, dtype=np.float, unpack=True)
-        self.hwp.updateParams({"Freqs": fs, "EffCurve": T, "IPCurve": rho})
+#
+#        #Adds HWP curves 
+#        fs, T, rho, _, _ = np.loadtxt(hwpFile, dtype=np.float, unpack=True)
+#        self.hwp.updateParams({"Freqs": fs, "EffCurve": T, "IPCurve": rho})
         
         #Calculates conversion from pW to Kcmb
         aniSpec  = lambda x: th.aniPowSpec(1, x, Tcmb)
@@ -71,6 +72,7 @@ class Telescope:
         
         #Propagates Unpolarized Spectrum through each element
         self.propSpectrum()        
+        self.getHWPSS2()
         self.getHWPSS()
         
             
@@ -144,8 +146,41 @@ class Telescope:
                     self.elements[i+1].polIncident      = e.polCreated   + e.polTransmitted
                     
                 
-                
-            
+    def getHWPSS2(self, fit = False):
+        hwp = self.hwp2
+        
+        IT = self.hwp.unpolIncident + self.hwp.polIncident
+        QT = self.hwp.polIncident
+        
+        IR = self.hwp.unpolReverse + self.hwp.polReverse
+        QR = self.hwp.polReverse
+        
+#        print hwp.Mueller(self.det.band_center, np.deg2rad(20.), reflected = False)
+#        print hwp.Mueller(self.det.band_center, np.deg2rad(20.), reflected = True)
+        
+        A2Trans = []
+        A2Refl = []
+        A4Trans = []
+        A4Refl = [] 
+
+        for (i, f) in enumerate(self.freqs):
+            A2T, A4T = hwp.getHWPSS(f, np.array([IT[i],QT[i], 0, 0]), reflected = False, fit = fit)
+            A2Trans.append(A2T)
+            A4Trans.append(A4T)
+            A2R, A4R = hwp.getHWPSS(f, np.array([IR[i],QR[i], 0, 0]), reflected = True, fit = fit)
+            A2Refl.append(A2R)
+            A4Refl.append(A4R)
+        eff = self.cumEff(self.freqs, start = self.hwpIndex)
+
+        A2Trans = np.array(A2Trans) * eff
+        A2Refl = np.array(A2Refl) * eff
+        A4Trans = np.array(A4Trans) * eff
+        A4Refl = np.array(A4Refl) * eff
+        
+        print th.powFromSpec(self.freqs, A4Trans) + th.powFromSpec(self.freqs, A4Refl)
+
+
+             
     def getHWPSS(self):
         """
         Calculates the expected HWPSS for the telescope. Computes a2, a4, A2, and A4.
@@ -165,14 +200,17 @@ class Telescope:
         #######################################################################
         ####   A4 Calculation        
         A4specT = (MT[0,0] - MT[2,2])/2. * QT
-        A4specT = .5 * ((MT[1,2] + MT[2,1])**2 + (MT[1,1] - MT[2,2])**2)**(1/2) * QT
+        A4specT = .5 * ((MT[1,2] + MT[2,1])**2 + (MT[1,1] - MT[2,2])**2)**(.5) * QT
         A4specT *= self.cumEff(self.freqs, start = self.hwpIndex)
         A4specR  = (MR[0,0] - MR[2,2])/2. * QR
-        A4specR  = .5 * ((MR[1,2] + MR[2,1])**2 + (MR[1,1] - MR[2,2])**2)**(1/2) * QR
+        A4specR  = .5 * ((MR[1,2] + MR[2,1])**2 + (MR[1,1] - MR[2,2])**2)**(.5) * QR
         A4specR *= self.cumEff(self.freqs, start = self.hwpIndex)
-
+            
         self.A4  = abs(.5 * th.powFromSpec(self.freqs, A4specT))
         self.A4 += abs(.5 * th.powFromSpec(self.freqs, A4specR))
+        
+#        print th.powFromSpec(self.freqs, hwp.polIncident * self.hwp2.toA4(self.freqs, polarized = True, reflected = False))
+        
          
         #######################################################################
         ####   A2 Calculation 
@@ -265,7 +303,7 @@ if __name__=="__main__":
     config = json.load( open ("../run/config.json") )  
     config["theta"] = np.deg2rad(20.)
     tel = Telescope(config)
-    print "Telescope A4: ", tel.A4 *tel.toKRJ / tel.cumEff(tel.det.band_center)
-    print "Telescope A2: ", tel.A2 *tel.toKRJ / tel.cumEff(tel.det.band_center)
+    print "Telescope A4: ", tel.A4
+    print "Telescope A2: ", tel.A2
 #    print tel.hwp.params["Mueller_T"]
     

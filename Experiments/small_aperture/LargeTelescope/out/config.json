@@ -3,11 +3,12 @@
     "BandCenter": null, 
     "ExperimentDirectory": "../Experiments/small_aperture/LargeTelescope/", 
     "FBW": null, 
+    "HWPDirectory": "../Experiments/HWP/3LayerSapphire/", 
     "HWPFile": "../HWP_Mueller/AHWP_Mueller_90to150GHz_thetainc0deg.txt", 
     "LowerFreq": null, 
     "OutputDirectory": "out", 
     "UpperFreq": null, 
     "WriteOutput": true, 
     "bandID": 2, 
-    "theta": 0.3488
+    "theta": 0.3490658503988659
 }
