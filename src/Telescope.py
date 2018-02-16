@@ -64,6 +64,16 @@ class Telescope:
 #        fs, T, rho, _, _ = np.loadtxt(hwpFile, dtype=np.float, unpack=True)
 #        self.hwp.updateParams({"Freqs": fs, "EffCurve": T, "IPCurve": rho})
         
+
+        plt.plot(self.freqs, self.hwp.pEmis(self.freqs))
+        plt.plot(self.freqs, map(self.hwp2.pEmissivity, self.freqs))
+        plt.plot(self.freqs, map(self.hwp2.pEmissivity2, self.freqs))
+        plt.xlabel("Frequency")
+        plt.ylabel("Differential Absorption")
+        plt.legend(["From Savini paper", "20 deg", "0 deg"])
+        plt.savefig("../../../Desktop/diffAbsComparison.pdf")
+        plt.show()
+        
         #Calculates conversion from pW to Kcmb
         aniSpec  = lambda x: th.aniPowSpec(1, x, Tcmb)
         self.toKcmb = 1/intg.quad(aniSpec, self.det.flo, self.det.fhi)[0]
@@ -73,7 +83,7 @@ class Telescope:
         #Propagates Unpolarized Spectrum through each element
         self.propSpectrum()        
         self.getHWPSS2(fit = False)
-        self.getHWPSS()
+#        self.getHWPSS()
         
             
         if config["WriteOutput"]:
@@ -162,15 +172,34 @@ class Telescope:
         A2Refl = []
         A4Trans = []
         A4Refl = [] 
-
+        test1 = []
+        test2 = []
         for (i, f) in enumerate(self.freqs):
+            
             A2T, A4T = hwp.getHWPSS(f, np.array([IT[i],QT[i], 0, 0]), reflected = False, fit = fit)
             A2Trans.append(A2T)
             A4Trans.append(A4T)
+            
+            
             A2R, A4R = hwp.getHWPSS(f, np.array([IR[i],QR[i], 0, 0]), reflected = True, fit = fit)
             A2Refl.append(A2R)
             A4Refl.append(A4R)
+            
+            a2, a4 = hwp.getHWPSS(f, np.array([IT[i], 0, 0, 0]), reflected = False, fit = False)
+            test1.append(a4)
+            
+            
+            a2, a4 = hwp.getHWPSS(f, np.array([IT[i], 0, 0, 0]), reflected = False, fit = True)
+            test2.append(a4)
+            
         eff = self.cumEff(self.freqs, start = self.hwpIndex)
+
+#        plt.plot(self.freqs, test1)
+#        plt.plot(self.freqs, test2)        
+#        plt.show()
+        
+#        print th.powFromSpec(self.freqs, test2)
+        
 
         A2Trans = np.array(A2Trans) * eff
         A2Refl = np.array(A2Refl) * eff
@@ -188,7 +217,7 @@ class Telescope:
         
         #######################################################################
         ####   a2 Calculation
-        self.a2 = MT[0,1]
+        self.a2 = hwp.MTave[0,1]
 
 
 
