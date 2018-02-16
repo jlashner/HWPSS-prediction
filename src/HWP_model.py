@@ -83,31 +83,7 @@ class HWP:
         Ap = 1 - Tp - Rp
         As = 1 - Ts - Rs
         
-        return (As - Ap) / 2
-        
-    def pEmissivity2(self, freq):
-        JT = tm.Jones(self.stack, freq, 0.0, 0.0, reflected = False)
-        JR = tm.Jones(self.stack, freq, 0.0, 0.0, reflected = True)
-        
-        Sp = np.array([1, 0])
-        Ss = np.array([0, 1])
-        
-        SpT = JT.dot(Sp)
-        SpR = JR.dot(Sp)
-        SsT = JT.dot(Ss)
-        SsR = JR.dot(Ss)
-        
-        Tp = SpT.dot(SpT.conj().T)
-        Rp = SpR.dot(SpR.conj().T)
-        Ts = SsT.dot(SsT.conj().T)
-        Rs = SsR.dot(SsR.conj().T)
-        
-        Ap = 1 - Tp - Rp
-        As = 1 - Ts - Rs
-        
-        return (As - Ap) / 2
-        
-        
+        return (As - Ap) / 2        
         
         
     def Mueller(self, freq, reflected = False):
