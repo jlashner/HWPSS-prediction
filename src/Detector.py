@@ -18,16 +18,16 @@ class Detector:
         cam_str = np.loadtxt(cameraFile, dtype=np.str, usecols=[2])
         self.f_num = float(cam_str[2])
         self.bath_temp = float(cam_str[2])
-
-
+        
 
         self.flo = self.band_center*(1 - .5 * self.fbw) #detector lower bound [Hz]
         self.fhi = self.band_center*(1 + .5 * self.fbw) #detector upper bound [Hz]
         
-        self.freqs = np.linspace(self.flo, self.fhi, 400) #Frequency array of the detector
-
         if config["LowerFreq"] and config["UpperFreq"]:
             self.flo = config["LowerFreq"]
             self.fhi = config["UpperFreq"]
             self.band_center = (self.flo + self.fhi) / 2
             self.fbw =  (self.fhi - self.flo) / self.band_center
+        
+        self.freqs = np.linspace(self.flo, self.fhi, 100) #Frequency array of the detector
+

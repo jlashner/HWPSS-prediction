@@ -20,19 +20,22 @@ import logging as log
 #==============================================================================
 # Constants
 #==============================================================================
-GHz = 1.0e9
-c = 2.99792e8
+GHz = 1.0e9    # HZ -> GHz
+c = 2.99792e8  # [m/s]
 
 
 class HWP:
     def __init__(self, hwpDir, temp, theta, det):
+        self.name = "HWP"
+        self.temp = temp 
+        self.freqs = det.freqs
         matFile = os.path.join(hwpDir, "materials.txt")
         stackFile = os.path.join(hwpDir, "stack.txt")
-        HWPSS_transFile = os.path.join(hwpDir, "HWPSS_Trans.npy")
-        HWPSS_reflFile = os.path.join(hwpDir, "HWPSS_Refl.npy")
         
         
-        
+        HWPSS_transFile = os.path.join(hwpDir, "HWPSS_Trans_%ddeg.npy"%(np.rad2deg(theta)))
+        HWPSS_reflFile = os.path.join(hwpDir, "HWPSS_Refl_%ddeg.npy"%(np.rad2deg(theta)))
+
         # =============================================================================
         #    Initialize materials, stack, and A2/4 fit files.     
         # =============================================================================
@@ -41,9 +44,40 @@ class HWP:
         self.materials = loadMaterials(matFile)
         self.stack = loadStack(self.materials, stackFile)
         
-        _, self.freqs, self.A2upT, self.A4upT, self.A2ppT, self.A4ppT = np.load(HWPSS_transFile)
-        _, _, self.A2upR, self.A4upR, self.A2ppR, self.A4ppR = np.load(HWPSS_reflFile)
+        _, fs, A2upT, A4upT, A2ppT, A4ppT = np.load(HWPSS_transFile)
+        _, _, A2upR, A4upR, A2ppR, A4ppR = np.load(HWPSS_reflFile)
+        
+#        
+#        plt.plot(fs/GHz, A2ppR)
+#        plt.plot(fs/GHz, A4ppR)
+#        plt.xlim()
+#        plt.title("S = (1, 1, 0, 0), Reflected")
+#        plt.xlabel("Frequency (GHz)")
+#        plt.ylabel("HWPSS Reflected")
+#        plt.legend(["A2", "A4"])
+#        plt.ylim((-.075, .5))
+#        plt.savefig("../images/A4ppR_0deg.pdf")
+#        plt.show()
 
+
+        
+        # Resample fns to have same length as detector frequency
+        self.A2upT, self.A4upT, self.A2ppT, self.A4ppT = [], [], [], []
+        self.A2upR, self.A4upR, self.A2ppR, self.A4ppR = [], [], [], []
+
+        for f in det.freqs:
+            self.A2upT.append(abs(np.interp(f, fs, A2upT)))
+            self.A4upT.append(abs(np.interp(f, fs, A4upT)))
+            self.A2ppT.append(abs(np.interp(f, fs, A2ppT)))
+            self.A4ppT.append(abs(np.interp(f, fs, A4ppT)))
+            self.A2upR.append(abs(np.interp(f, fs, A2upR)))
+            self.A4upR.append(abs(np.interp(f, fs, A4upR)))
+            self.A2ppR.append(abs(np.interp(f, fs, A2ppR)))
+            self.A4ppR.append(abs(np.interp(f, fs, A4ppR)))
+        
+        self.A2upT, self.A4upT, self.A2ppT, self.A4ppT = map(np.array,  [self.A2upT, self.A4upT, self.A2ppT, self.A4ppT])
+        self.A2upR, self.A4upR, self.A2ppR, self.A4ppR = map(np.array,  [self.A2upR, self.A4upR, self.A2ppR, self.A4ppR])
+            
 
         # =============================================================================
         #    Calculates average trans and reflection Mueller matrices 
@@ -58,33 +92,62 @@ class HWP:
         self.MTave /= len(det.freqs)
         self.MRave /= len(det.freqs)
         
-        self.pEmissivity(det.band_center)
+        #==============================================================================
+        #   Calculates Efficiency and emission curves
+        #==============================================================================
+        self.eff = []
+        self.emis = []
+        self.pemis = []
+        for f in self.freqs:
+#            JT = tm.Jones(self.stack, f, self.theta, 0.0, reflected = False)
+#            JR = tm.Jones(self.stack, f, self.theta, 0.0, reflected = True)
+
+            JT = tm.Jones(self.stack, f, 0.0, 0.0, reflected = False)
+            JR = tm.Jones(self.stack, f, 0.0, 0.0, reflected = True)
+            
+            Sp = np.array([1, 0])
+            Ss = np.array([0, 1])
+            
+            SpT = JT.dot(Sp)
+            SpR = JR.dot(Sp)
+            SsT = JT.dot(Ss)
+            SsR = JR.dot(Ss)
+            
+            Tp = SpT.dot(SpT.conj().T)
+            Rp = SpR.dot(SpR.conj().T)
+            Ts = SsT.dot(SsT.conj().T)
+            Rs = SsR.dot(SsR.conj().T)    
+            Ap = 1 - Tp - Rp
+            As = 1 - Ts - Rs
+            
+            self.eff.append(abs(.5 * (Tp + Ts)))
+            self.emis.append(abs(.5 * (Ap + As)))
+            self.pemis.append(abs(.5 * (Ap - As)))
         
-    def pEmissivity(self, freq):
-#        JT = tm.Jones(self.stack, freq, self.theta, 0.0, reflected = False)
-#        JR = tm.Jones(self.stack, freq, self.theta, 0.0, reflected = True)
+        self.eff = np.array(self.eff)
+        self.emis = np.array(self.emis)
+        self.pemis = np.array(self.pemis)
         
-        JT = tm.Jones(self.stack, freq, self.theta, 0.0, reflected = False)
-        JR = tm.Jones(self.stack, freq, self.theta, 0.0, reflected = True)
+    def Eff(self, freq):
+        return np.interp(freq, self.freqs, self.eff)
+
+    def pEff(self, freq):
+        return self.Eff(freq)
+    
+    def Emis(self, freq):
+        return np.interp(freq, self.freqs, self.emis)
+    
+    def pEmis(self, freq):
+        return np.interp(freq, self.freqs, self.pemis)
         
-        Sp = np.array([1, 0])
-        Ss = np.array([0, 1])
-        
-        SpT = JT.dot(Sp)
-        SpR = JR.dot(Sp)
-        SsT = JT.dot(Ss)
-        SsR = JR.dot(Ss)
-        
-        Tp = SpT.dot(SpT.conj().T)
-        Rp = SpR.dot(SpR.conj().T)
-        Ts = SsT.dot(SsT.conj().T)
-        Rs = SsR.dot(SsR.conj().T)
-        
-        Ap = 1 - Tp - Rp
-        As = 1 - Ts - Rs
-        
-        return (As - Ap) / 2        
-        
+    def Ip(self, freq):
+        return 0
+    
+    def Refl(self, freq):
+        return 0
+    
+    def pRefl(self, freq):
+        return 0
         
     def Mueller(self, freq, reflected = False):
         """
@@ -108,40 +171,23 @@ class HWP:
             A2 = .5 * ((I * M[1,0] + Q * M[0,1])**2 + (I * M[2,0] + Q * M[0,2])**2)**.5
             A4 = .25 * (Q * Q * ((M[1,2] + M[2,1])**2 + (M[1,1] - M[2,2])**2))**.5
             
-        else:            
+        else:           
+#            p= fitAmplitudes(self.stack, freq, self.theta, stokes, reflected = reflected)
+#            A2, A4 = abs(p[2]), abs(p[4])
             if not reflected:
-                A4 = abs(stokes[1] * np.interp(freq, self.freqs, self.A4ppT) + (stokes[0]-stokes[1]) * np.interp(freq, self.freqs, self.A4upT))
-                A2 = abs(stokes[1] * np.interp(freq, self.freqs, self.A2upT) + (stokes[0]-stokes[1]) * np.interp(freq, self.freqs, self.A2upT))
+                A4 = abs(stokes[1] * np.interp(freq, self.freqs, self.A4ppT)) + abs((stokes[0]-stokes[1]) * np.interp(freq, self.freqs, self.A4upT))
+                A2 = abs(stokes[1] * np.interp(freq, self.freqs, self.A2upT)) + abs((stokes[0]-stokes[1]) * np.interp(freq, self.freqs, self.A2upT))
             else:
-                A4 = abs(stokes[1] * np.interp(freq, self.freqs, self.A4ppR) + (stokes[0]-stokes[1]) * np.interp(freq, self.freqs, self.A4upR))
-                A2 = abs(stokes[1] * np.interp(freq, self.freqs, self.A2upR) + (stokes[0]-stokes[1]) * np.interp(freq, self.freqs, self.A2upR))
+                A4 = abs(stokes[1] * np.interp(freq, self.freqs, self.A4ppR)) + abs((stokes[0]-stokes[1]) * np.interp(freq, self.freqs, self.A4upR))
+                A2 = abs(stokes[1] * np.interp(freq, self.freqs, self.A2upR)) + abs((stokes[0]-stokes[1]) * np.interp(freq, self.freqs, self.A2upR))
             
         return A2, A4
-
-    def toA4(self, freq, polarized = False, reflected = False, fit = False):
-        
-        if polarized and reflected:
-            A4 = self.A4ppR
-        elif polarized and (not reflected):
-            A4 = self.A4ppT
-        elif (not polarized) and reflected:
-            A4 = self.A4upR
-        else:
-            A4 = self.A4upT
-        
-        return np.interp(freq, self.freqs, A4)
     
-    def toA2(self, freq, polarized = False, reflected = False):
-        if polarized and reflected:
-            A2 = self.A2ppR
-        elif polarized and (not reflected):
-            A2 = self.A2ppT
-        elif (not polarized) and reflected:
-            A2 = self.A2upR
-        else:
-            A2 = self.A2upT
+    def fit1 (self, freq, stokes, reflected = False):
+        p= fitAmplitudes(self.stack, freq, self.theta, stokes, reflected = reflected)
+        return abs(p[2]), abs(p[4])
         
-        return np.interp(freq, self.freqs, A2)
+
         
 def demodFit(x, a0, a1, a2, a3, a4, a5, a6, a7, a8, p1, p2, p3, p4, p5, p6, p7, p8):
     """
@@ -222,30 +268,30 @@ if __name__ == "__main__":
     
     
     config = json.load( open ("../run/config.json") )  
-    config["theta"] = np.deg2rad(20.)
+    config["theta"] = np.deg2rad(0.)
     tel = tp.Telescope(config)
-
+    print tel.hwpssTable()
     
-#    
+    
 #    freqs= np.linspace(50 * GHz, 200 * GHz, 200)
-#    A2upT, A4upT = fitAmplitudesBand(stack, freqs, np.deg2rad(20.), stokes = np.array([1,0,0,0]), reflected = False)
-#    A2ppT, A4ppT = fitAmplitudesBand(stack, freqs, np.deg2rad(20.), stokes = np.array([1,1,0,0]), reflected = False)
+#    A2upT, A4upT = fitAmplitudesBand(stack, freqs, np.deg2rad(0.), stokes = np.array([1,0,0,0]), reflected = False)
+#    A2ppT, A4ppT = fitAmplitudesBand(stack, freqs, np.deg2rad(0.), stokes = np.array([1,1,0,0]), reflected = False)
 #    
-#    A2upR, A4upR = fitAmplitudesBand(stack, freqs, np.deg2rad(20.), stokes = np.array([1,0,0,0]), reflected = True)
-#    A2ppR, A4ppR = fitAmplitudesBand(stack, freqs, np.deg2rad(20.), stokes = np.array([1,1,0,0]), reflected = True)
+#    A2upR, A4upR = fitAmplitudesBand(stack, freqs, np.deg2rad(0.), stokes = np.array([1,0,0,0]), reflected = True)
+#    A2ppR, A4ppR = fitAmplitudesBand(stack, freqs, np.deg2rad(0.), stokes = np.array([1,1,0,0]), reflected = True)
 #    
 #    labels = np.array(["freqs", "A2up", "A4up", "A2pp", "A4pp"])
 #    
 #    data1 = np.array([labels, freqs, A2upT, A4upT, A2ppT, A4ppT])
-#    np.save("../HWP/3LayerSapphire/HWPSS_Trans",data1)
+#    np.save("../HWP/3LayerSapphire/HWPSS_Trans_0deg",data1)
 #    
 #    data2 = np.array([labels, freqs, A2upR, A4upR, A2ppR, A4ppR])
-#    np.save("../HWP/3LayerSapphire/HWPSS_Refl",data2)
-#    
-#    
+#    np.save("../HWP/3LayerSapphire/HWPSS_Refl_0deg",data2)
+    
+    
 #    plt.plot(freqs, A4ppT)
 #    plt.show()
-#    
-#    
-#    
+    
+    
+    
 #    

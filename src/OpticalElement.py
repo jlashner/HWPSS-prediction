@@ -4,7 +4,7 @@ from scipy import interpolate
 from scipy import integrate as intg
 import matplotlib.pyplot as plt
 import transfer_matrix as tm
-
+import HWP_model
 import Detector as dt
 import IPCalc
 
@@ -210,7 +210,7 @@ def loadHWP(hwp, theta, det):
     return
     
 
-def loadOpticalChain(opticsFile,det, theta = np.deg2rad(15./2)):
+def loadOpticalChain(opticsFile, det, hwpDir, theta = np.deg2rad(15./2)):
     """Returns list of optical elements from opticalChain.txt file. """
     
     elements = []
@@ -240,6 +240,10 @@ def loadOpticalChain(opticsFile,det, theta = np.deg2rad(15./2)):
                 
         name = params["Element"]    
         
+        if name == "HWP":
+            elements.append(HWP_model.HWP(hwpDir, params["Temp"], theta,  det))
+            continue
+            
         ## Calculates differential transmission and absorption using tmm        
         if name == "AluminaF" or name == "Window":
             (ip,polRefl, polAbs) = IPCalc.getDiffCoeffs(name, det.band_center, det.fbw, theta)
