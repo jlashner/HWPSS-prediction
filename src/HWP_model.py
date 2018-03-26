@@ -32,7 +32,6 @@ class HWP:
         matFile = os.path.join(hwpDir, "materials.txt")
         stackFile = os.path.join(hwpDir, "stack.txt")
         
-        
         HWPSS_transFile = os.path.join(hwpDir, "HWPSS_Trans_%ddeg.npy"%(np.rad2deg(theta)))
         HWPSS_reflFile = os.path.join(hwpDir, "HWPSS_Refl_%ddeg.npy"%(np.rad2deg(theta)))
 
@@ -44,8 +43,8 @@ class HWP:
         self.materials = loadMaterials(matFile)
         self.stack = loadStack(self.materials, stackFile)
         
-        _, fs, A2upT, A4upT, A2ppT, A4ppT = np.load(HWPSS_transFile)
-        _, _, A2upR, A4upR, A2ppR, A4ppR = np.load(HWPSS_reflFile)
+        _, fs, A2upT, A4upT, A2ppT, A4ppT = np.load(HWPSS_transFile, encoding="bytes")
+        _, _, A2upR, A4upR, A2ppR, A4ppR = np.load(HWPSS_reflFile, encoding="bytes")
         
 #        
 #        plt.plot(fs/GHz, A2ppR)
@@ -211,10 +210,10 @@ def loadMaterials(matFile):
     """
     mats = {}
     name, no, ne, lto, lte, mtype = np.loadtxt(matFile, dtype=np.str, unpack=True)
-    no = np.array(map(np.float, no))
-    ne = np.array(map(np.float, ne))
-    lto = 1.0e-4 * np.array(map(np.float, lto))
-    lte = 1.0e-4 * np.array(map(np.float, lte))
+    no = np.array(list(map(np.float, no)))
+    ne = np.array(list(map(np.float, ne)))
+    lto = 1.0e-4 * np.array(list(map(np.float, lto)))
+    lte = 1.0e-4 * np.array(list(map(np.float, lte)))
     for (i,n) in enumerate(name):
         mats[n] = tm.material(no[i], ne[i], lto[i], lte[i], n, mtype[i])
     return mats
@@ -224,9 +223,10 @@ def loadStack(materials, stackFile):
         Loads a layer stack using materials from input dictionary.
     """
     name, thick, angle = np.loadtxt(stackFile, dtype=np.str, unpack=True)
-    mats = map(lambda n : materials[n] , name)
-    thick = np.array(map(np.float, thick)) * 1.e-3
-    angle = np.array(map(np.float, angle))
+    mats = [materials[n] for n in name]
+    
+    thick = np.array(list(map(np.float, thick))) * 1.e-3
+    angle = np.array(list(map(np.float, angle)))
     angle = np.deg2rad(angle)
     return tm.Stack(thick, mats, angle)
 
@@ -255,7 +255,7 @@ def fitAmplitudesBand(stack, freqs, theta, stokes, reflected = False):
     A2 = []
     A4 = []
     for f in freqs:
-        print f/ GHz
+        print(f/ GHz)
         popt = fitAmplitudes(stack, f, theta, stokes = stokes, reflected = reflected, p = popt)
         A2.append(popt[2])
         A4.append(popt[4])
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     config = json.load( open ("../run/config.json") )  
     config["theta"] = np.deg2rad(0.)
     tel = tp.Telescope(config)
-    print tel.hwpssTable()
+    print(tel.hwpssTable())
     
     
 #    freqs= np.linspace(50 * GHz, 200 * GHz, 200)

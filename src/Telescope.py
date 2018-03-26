@@ -39,7 +39,7 @@ class Telescope:
             cameraFile  = os.path.join(expDir, "camera.txt")
             opticsFile  = os.path.join(expDir, "opticalChain.txt")
         except ValueError:
-            print "Experiment directory, Atmosphere File, and HWP directory must all be defined in config file"
+            print("Experiment directory, Atmosphere File, and HWP directory must all be defined in config file")
             raise 
             
         
@@ -63,7 +63,7 @@ class Telescope:
             self.hwpIndex = [e.name for e in self.elements].index("HWP")
             self.hwp = self.elements[self.hwpIndex]
         except ValueError:
-            print "No HWP in Optical Chain"
+            print("No HWP in Optical Chain")
             raise
       
         
@@ -268,14 +268,16 @@ class Telescope:
 #        A2row = np.array(map(lambda x : th.powFromSpec(self.freqs, x), A2spectra)) * pW
         
         
-        powers = map(lambda x : th.powFromSpec(self.freqs, x), spectra)
+        
+        
+        powers = [th.powFromSpec(self.freqs, x) for x in spectra]
         powers = np.array(powers) * pW
         tableString += self._formatRow(headers)
         tableString += self._formatRow(units)
         tableString += "-" * 70 + "\n"
-        tableString += self._formatRow(["Power"] +  map(lambda x : "%.3e"%x, powers))
-        tableString += self._formatRow(["A4 (@HWP)"] +  map(lambda x : "%.3e"%x, A4row))
-        tableString += self._formatRow(["A2 (@HWP)"] +  map(lambda x : "%.3e"%x, A2row))
+        tableString += self._formatRow(["Power"] +  ["%.3e"%x for x in powers])
+        tableString += self._formatRow(["A4 (@HWP)"] +  ["%.3e"%x for x in A4row])
+        tableString += self._formatRow(["A2 (@HWP)"] +  ["%.3e"%x for x in A2row])
         
         tableString += '\n'
         tableString += '-'*70+ '\n'
@@ -291,8 +293,8 @@ class Telescope:
         tableString += self._formatRow(units)
         tableString += "-"*70 + "\n"
         
-        tableString += self._formatRow(["AtDetector"] + map(lambda x : "%.3e"%x, atDet ))
-        tableString += self._formatRow(["AtEntrance"] + map(lambda x : "%.3e"%x, atEntrance ))
+        tableString += self._formatRow(["AtDetector"] +  ["%.3e"%x for x in atDet])
+        tableString += self._formatRow(["AtEntrance"] +  ["%.3e"%x for x in atEntrance])
         
         return tableString
     
@@ -330,9 +332,9 @@ if __name__=="__main__":
 
     tel = Telescope(config)
     
-    print tel.hwpssTable()
+    print(tel.hwpssTable())
     
-    print "Telescope A4: ", tel.A4 * pW / tel.cumEff(tel.det.band_center, start = tel.hwpIndex)
-    print "Telescope A2: ", tel.A2 * pW
+    print("Telescope A4: ", tel.A4 * pW / tel.cumEff(tel.det.band_center, start = tel.hwpIndex))
+    print("Telescope A2: ", tel.A2 * pW)
 #    print tel.hwp.params["Mueller_T"]
     

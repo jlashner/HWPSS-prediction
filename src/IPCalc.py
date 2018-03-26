@@ -30,7 +30,7 @@ def ARCoat(n, lam0, layers = 2):
         nAR = [real(n)**(1./2)]
         
 
-    dAR = map(lambda x : lam0 / (4.0 * real(x)), nAR)
+    dAR = list(map(lambda x : lam0 / (4.0 * real(x)), nAR))
     return nAR, dAR
 
 
@@ -62,8 +62,8 @@ def getDiffCoeffs(name, band_center, fbw, theta):
     
     #Creates Frequency Array and gets T,R, and A coefficients accross bandwidth
     freqs = np.linspace(flo, fhi, 300)
-    s_coeffs = map( lambda f : getCoeffs(n_stack, d_stack, f, theta, 's'), freqs)
-    p_coeffs = map( lambda f : getCoeffs(n_stack, d_stack, f, theta, 'p'), freqs)
+    s_coeffs = list(map( lambda f : getCoeffs(n_stack, d_stack, f, theta, 's'), freqs))
+    p_coeffs = list(map( lambda f : getCoeffs(n_stack, d_stack, f, theta, 'p'), freqs))
     
     Ts, Rs, As = np.transpose(s_coeffs)
     Tp, Rp, Ap = np.transpose(p_coeffs)
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     fbw = np.array([.376, .276]) #Fractional bandwidth
     theta = np.deg2rad(15.0)
 
-    print getIP("AluminaF", bc[1], fbw[1], theta)    
+    print(getIP("AluminaF", bc[1], fbw[1], theta)    )
 
 
         
