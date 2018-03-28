@@ -204,14 +204,14 @@ class Telescope:
         
         A4TSpec     = np.array(A4TSpec) * eff
         A4RSpec     = np.array(A4RSpec) * eff
-        
-        print("A2 from Transmission: %f"%(th.powFromSpec(self.freqs, A2TSpec)*self.toKcmb))
-        print("A2 from Reflection: %f"%(th.powFromSpec(self.freqs, A2RSpec)*self.toKcmb))
-        print("A2 from Emission: %f"%(th.powFromSpec(self.freqs, A2emitted)*self.toKcmb))
-        
-        print("A4 from Transmission: %f"%(th.powFromSpec(self.freqs, A4TSpec)*self.toKcmb))
-        print("A4 from Reflection: %f"%(th.powFromSpec(self.freqs, A4RSpec)*self.toKcmb))
-
+#        
+#        print("A2 from Transmission: %f"%(th.powFromSpec(self.freqs, A2TSpec)*self.toKcmb))
+#        print("A2 from Reflection: %f"%(th.powFromSpec(self.freqs, A2RSpec)*self.toKcmb))
+#        print("A2 from Emission: %f"%(th.powFromSpec(self.freqs, A2emitted)*self.toKcmb))
+#        
+#        print("A4 from Transmission: %f"%(th.powFromSpec(self.freqs, A4TSpec)*self.toKcmb))
+#        print("A4 from Reflection: %f"%(th.powFromSpec(self.freqs, A4RSpec)*self.toKcmb))
+#
         
         # Calculation of total A2 and A4 signals
         self.A4 =  th.powFromSpec(self.freqs, A4TSpec) + th.powFromSpec(self.freqs, A4RSpec)
@@ -220,15 +220,20 @@ class Telescope:
         #==============================================================================
         #   a4 calculation    
         #==============================================================================
-        self.a4  = 0
+        ip  = 0
         for e in self.elements[:self.hwpIndex]:
-            self.a4 += e.Ip(self.det.band_center)
-        self.a4*=self.cumEff(self.det.band_center)
+            ip += e.Ip(self.det.band_center)
         
-        #==============================================================================
-        #   a2 calculation    
-        #==============================================================================
-        self.a2 = self.hwp.MTave[0,1]
+        a2spec = []
+        a4spec = []
+        for f in self.freqs:
+            a2, a4 = self.hwp.getHWPSS(f, np.array([1, ip, 0, 0]), reflected = False, fit = fit)
+            a2spec.append(a2)
+            a4spec.append(a4)
+            
+        self.a2 = np.mean(a2spec) * self.cumEff(self.det.band_center)
+        self.a4 = np.mean(a4spec)* self.cumEff(self.det.band_center)
+        
 
 
 
@@ -338,15 +343,12 @@ class Telescope:
 
 if __name__=="__main__":
 
-    config = json.load( open ("../run/config.json") )  
-    config["theta"] = np.deg2rad(20.)
+    config = json.load(open("../run/config.json"))
+    print("theta\tA2\tA4\ta2\ta4")
+    for theta in range(21):
+        config["theta"] = np.deg2rad(theta)
+        tel = Telescope(config)
+        print("%d\t%.5f\t%.5f\t%.5f\t%.5f"%(theta, tel.A2 * tel.toKcmb, tel.A4 * tel.toKcmb, tel.a2*100, tel.a4*100))
+            
 
-
-    tel = Telescope(config)
-    
-    print(tel.hwpssTable())
-    
-    print("Telescope A4: ", tel.A4 * tel.toKcmb)
-    print("Telescope A2: ", tel.A2 * tel.toKcmb)
-#    print tel.hwp.params["Mueller_T"]
     
