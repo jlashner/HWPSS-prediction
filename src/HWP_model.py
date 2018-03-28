@@ -17,6 +17,11 @@ import Telescope as tp
 import os
 import json
 import logging as log
+
+try:
+    from tqdm import *
+except:
+    tqdm = lambda x : x
 #==============================================================================
 # Constants
 #==============================================================================
@@ -32,8 +37,17 @@ class HWP:
         matFile = os.path.join(hwpDir, "materials.txt")
         stackFile = os.path.join(hwpDir, "stack.txt")
         
-        HWPSS_transFile = os.path.join(hwpDir, "HWPSS_Trans_%ddeg.npy"%(np.rad2deg(theta)))
-        HWPSS_reflFile = os.path.join(hwpDir, "HWPSS_Refl_%ddeg.npy"%(np.rad2deg(theta)))
+        
+        # =============================================================================
+        #   Find correct HWP file
+        # =============================================================================
+        
+        #Right now we only have theta = 0,5,10,15,20 deg
+        theta_deg = int(5 * round(np.rad2deg(theta) / 5))
+        datadir = os.path.join(hwpDir, "HWPSS_data/%d_deg/"%(np.rad2deg(theta)))
+        
+        HWPSS_transFile = os.path.join(datadir, "Trans.npy")
+        HWPSS_reflFile = os.path.join(datadir, "Refl.npy")
 
         # =============================================================================
         #    Initialize materials, stack, and A2/4 fit files.     
@@ -43,23 +57,9 @@ class HWP:
         self.materials = loadMaterials(matFile)
         self.stack = loadStack(self.materials, stackFile)
         
-        _, fs, A2upT, A4upT, A2ppT, A4ppT = np.load(HWPSS_transFile, encoding="bytes")
-        _, _, A2upR, A4upR, A2ppR, A4ppR = np.load(HWPSS_reflFile, encoding="bytes")
-        
-#        
-#        plt.plot(fs/GHz, A2ppR)
-#        plt.plot(fs/GHz, A4ppR)
-#        plt.xlim()
-#        plt.title("S = (1, 1, 0, 0), Reflected")
-#        plt.xlabel("Frequency (GHz)")
-#        plt.ylabel("HWPSS Reflected")
-#        plt.legend(["A2", "A4"])
-#        plt.ylim((-.075, .5))
-#        plt.savefig("../images/A4ppR_0deg.pdf")
-#        plt.show()
+        _, fs, A2upT, A4upT, A2ppT, A4ppT = np.load(HWPSS_transFile)
+        _, _, A2upR, A4upR, A2ppR, A4ppR = np.load(HWPSS_reflFile)
 
-
-        
         # Resample fns to have same length as detector frequency
         self.A2upT, self.A4upT, self.A2ppT, self.A4ppT = [], [], [], []
         self.A2upR, self.A4upR, self.A2ppR, self.A4ppR = [], [], [], []
@@ -241,7 +241,7 @@ def fitAmplitudes(stack, freq, theta, stokes = np.array([1, 0, 0, 0]), reflected
     for chi in chis:
         M = tm.Mueller(stack, freq, theta, chi, reflected = reflected)
         demod.append(det.dot(M).dot(stokes)[0])
-    if p != None:
+    if type(p) != None:
         p = [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0]
         
     popt, pcov = optimize.curve_fit(demodFit, chis, demod, p)    
@@ -254,23 +254,55 @@ def fitAmplitudesBand(stack, freqs, theta, stokes, reflected = False):
     popt = None
     A2 = []
     A4 = []
-    for f in freqs:
-        print(f/ GHz)
+    print("Fitting amplitude band: theta = %.1f, reflected=%s, stokes = %s"%(theta, reflected, str(stokes)))
+    for f in tqdm(freqs):
+#        print(f/ GHz)
         popt = fitAmplitudes(stack, f, theta, stokes = stokes, reflected = reflected, p = popt)
         A2.append(popt[2])
         A4.append(popt[4])
     return np.array(A2), np.array(A4)
+
+def calcHWPSSCoeffs(theta = 0.0, reflected = False):
     
+    labels = np.array(["freqs", "A2up", "A4up", "A2pp", "A4pp"])
+    freqs= np.linspace(50 * GHz, 200 * GHz, 200)
+    
+    A2up, A4up = fitAmplitudesBand(stack, freqs, theta, stokes = np.array([1,0,0,0]), reflected = reflected)
+    A2pp, A4pp = fitAmplitudesBand(stack, freqs, theta, stokes = np.array([1,1,0,0]), reflected = reflected)
+    
+    return np.array([labels, freqs, A2up, A4up, A2pp, A4pp])
+
+
 
 if __name__ == "__main__":
-#    materials = loadMaterials("../HWP/3LayerSapphire/materials.txt")
-#    stack       = loadStack(materials, "../HWP/3LayerSapphire/stack.txt")      
+
+#    for theta in [0, 5, 10, 15, 20]:
+#        data = np.load("../HWP/3LayerSapphire/HWPSS_data/%s_deg/Trans.npy"%theta)  
+#        print(np.mean(data[3]))
+#        plt.plot(data[1], data[5])
+#
+#    plt.show()
+
+
+    hwpdir = "../HWP/3LayerSapphire/"
+    datadir = os.path.join(hwpdir + "HWPSS_data/")
+    materials = loadMaterials(os.path.join(hwpdir, "materials.txt"))
+    stack       = loadStack(materials, os.path.join(hwpdir, "stack.txt"))      
     
-    
-    config = json.load( open ("../run/config.json") )  
-    config["theta"] = np.deg2rad(0.)
-    tel = tp.Telescope(config)
-    print(tel.hwpssTable())
+    for theta in range(21):
+        path = datadir + "%d_deg/"%(theta)
+
+        if (os.path.exists(os.path.join(path, "Refl.npy"))):
+            print("Skipping")
+            continue
+        os.makedirs(path, exist_ok = True)
+            
+        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = False)
+        np.save(path + "Trans", data)
+        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = True)
+        np.save(path + "Refl", data)
+##        
+#    data = calcHWPSSCoeffs()
     
     
 #    freqs= np.linspace(50 * GHz, 200 * GHz, 200)

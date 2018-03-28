@@ -165,7 +165,7 @@ class Telescope:
         
         IR = self.hwp.unpolReverse + self.hwp.polReverse
         QR = self.hwp.polReverse
-    
+
 
         #==============================================================================
         #   Calculation of A2 and A4
@@ -176,12 +176,12 @@ class Telescope:
         A2spec = [[],[],[],[]]   # UnpolFW polFW unpolBW polBW
         A4spec = [[],[],[],[]]   # UnpolFW polFW unpolBW polBW
         
+        a2spec = []
+        test = []
         # Gets A2 and A4 for transmission and reflection at each frequency
         for (i, f) in enumerate(self.freqs):
             
-            
-            
-            A2T, A4T = self.hwp.getHWPSS(f, np.array([IT[i],QT[i], 0, 0]), reflected = False, fit = fit)                        
+            A2T, A4T = self.hwp.getHWPSS(f, np.array([IT[i],QT[i], 0, 0]), reflected = False, fit = fit)
             A2TSpec.append(A2T)
             A4TSpec.append(A4T)
             
@@ -189,19 +189,30 @@ class Telescope:
             A2RSpec.append(A2R)
             A4RSpec.append(A4R)
         
-            A2emitted = .5 * self.hwp.polEmitted
-        
+
+        A2emitted = .5 * self.hwp.polEmitted
+
         
         
         # Efficiency between HWP and detector
         eff = self.cumEff(self.freqs, start = self.hwpIndex)        
         # Modulated signal at the detector
         A2TSpec     = np.array(A2TSpec) * eff
+
         A2RSpec     = np.array(A2RSpec) * eff
         A2emitted   = np.array(A2emitted) * eff
         
         A4TSpec     = np.array(A4TSpec) * eff
         A4RSpec     = np.array(A4RSpec) * eff
+        
+        print("A2 from Transmission: %f"%(th.powFromSpec(self.freqs, A2TSpec)*self.toKcmb))
+        print("A2 from Reflection: %f"%(th.powFromSpec(self.freqs, A2RSpec)*self.toKcmb))
+        print("A2 from Emission: %f"%(th.powFromSpec(self.freqs, A2emitted)*self.toKcmb))
+        
+        print("A4 from Transmission: %f"%(th.powFromSpec(self.freqs, A4TSpec)*self.toKcmb))
+        print("A4 from Reflection: %f"%(th.powFromSpec(self.freqs, A4RSpec)*self.toKcmb))
+
+        
         # Calculation of total A2 and A4 signals
         self.A4 =  th.powFromSpec(self.freqs, A4TSpec) + th.powFromSpec(self.freqs, A4RSpec)
         self.A2 =  th.powFromSpec(self.freqs, A2TSpec) + th.powFromSpec(self.freqs, A2RSpec) + th.powFromSpec(self.freqs, A2emitted)
@@ -212,6 +223,7 @@ class Telescope:
         self.a4  = 0
         for e in self.elements[:self.hwpIndex]:
             self.a4 += e.Ip(self.det.band_center)
+        self.a4*=self.cumEff(self.det.band_center)
         
         #==============================================================================
         #   a2 calculation    
@@ -334,7 +346,7 @@ if __name__=="__main__":
     
     print(tel.hwpssTable())
     
-    print("Telescope A4: ", tel.A4 * pW / tel.cumEff(tel.det.band_center, start = tel.hwpIndex))
-    print("Telescope A2: ", tel.A2 * pW)
+    print("Telescope A4: ", tel.A4 * tel.toKcmb)
+    print("Telescope A2: ", tel.A2 * tel.toKcmb)
 #    print tel.hwp.params["Mueller_T"]
     
