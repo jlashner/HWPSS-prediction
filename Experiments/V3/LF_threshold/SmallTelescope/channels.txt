@@ -1,0 +1,6 @@
+#*****Detector channels*****
+#
+BandID   PixelID   BandCenter   FBW   PixSize   NumDet   WaistFact   DetEff   Psat   PsatFact   CarrierIndex   TransTemp   TcFrac   BunchFactor   Yield   NEI         nModes   boloR
+#	 NA	   [GHz]        NA    [mm]      NA	 NA	     NA	      [pW]   NA	        NA	       [K]	   NA  	    NA		  NA      [aW/rtHz]   NA       [Ohms]
+1	 1	   27.0	        0.222 18.3      518	 3.00	     0.6      NA     3.0	2.7	       0.159	   NA	    1.0		  0.6     NA	      1.0      1.0
+2	 1	   39.0		0.462 18.3      518	 3.00	     0.6      NA     3.0	2.7	       0.159	   NA	    1.0		  0.6	  NA	      1.0      1.0

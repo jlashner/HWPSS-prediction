@@ -42,7 +42,6 @@ class HWP:
         #   Find correct HWP file
         # =============================================================================
         
-        #Right now we only have theta = 0,5,10,15,20 deg
         theta_deg = int(5 * round(np.rad2deg(theta) / 5))
         datadir = os.path.join(hwpDir, "HWPSS_data/%d_deg/"%(np.rad2deg(theta)))
         

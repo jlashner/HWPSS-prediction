@@ -1,0 +1,7 @@
+#*****LB-specific parameters*****
+#
+Parameter			Unit	Value		Comment
+ObservationTime			[Yrs]	3.0		
+SkyFraction			NA	0.7		
+ObservationEfficiency		NA	0.80		
+NETmargin			NA	1.00

@@ -36,6 +36,7 @@ def ARCoat(n, lam0, layers = 2):
 
 def getCoeffs(n, d, freq, theta, pol):
     """Returns T, R, A coefficients for an optical stack of polarization pol ('s' or 'p')"""
+    assert pol in ['s', 'p']
     lam_vac= c / freq * 1000 #vacuum wavelength in mm
     s = tmm.coh_tmm(pol, n, d, theta, lam_vac)
     return [s['T'], s['R'], 1 - s['T'] - s['R']]
@@ -44,8 +45,11 @@ def getCoeffs(n, d, freq, theta, pol):
 def getDiffCoeffs(name, band_center, fbw, theta):
     """Returns the differential transmission and differential coefficient of an optical element"""
     lam0 = 2.5 #[mm]
+    lam0 = 1.1
     flo = band_center * (1 - fbw/ 2.)
     fhi = band_center * (1 + fbw/ 2.)
+    flo = 200 * GHz
+    fhi = 300 * GHz
     
     if name == "Window":
         n0 =  1.5 + .0001j
@@ -56,17 +60,23 @@ def getDiffCoeffs(name, band_center, fbw, theta):
     else:
         return (0,0)
         
-    nAR, dAR = ARCoat(n0, lam0)
+    nAR, dAR = ARCoat(n0, lam0, layers = 2)
     n_stack = [1.0] + nAR + [n0] + nAR[::-1] + [1.0]
     d_stack = [Inf] + dAR + [d0] + dAR[::-1] + [Inf]
     
     #Creates Frequency Array and gets T,R, and A coefficients accross bandwidth
     freqs = np.linspace(flo, fhi, 300)
-    s_coeffs = list(map( lambda f : getCoeffs(n_stack, d_stack, f, theta, 's'), freqs))
-    p_coeffs = list(map( lambda f : getCoeffs(n_stack, d_stack, f, theta, 'p'), freqs))
+    s_coeffs = [getCoeffs(n_stack, d_stack, f, theta, 's') for f in freqs]
+    p_coeffs = [getCoeffs(n_stack, d_stack, f, theta, 'p') for f in freqs]
     
     Ts, Rs, As = np.transpose(s_coeffs)
     Tp, Rp, Ap = np.transpose(p_coeffs)
+    
+    plt.plot(freqs, Ts)
+    plt.plot(freqs, Rs)
+    plt.plot(freqs, As)
+    plt.ylim(0, 1)
+    plt.show()
     
     #Band-averages differential transmission, reflection and absorption    
     diffTrans =  abs(intg.simps((Ts - Tp)/2, freqs)/(band_center * fbw))
@@ -80,8 +90,8 @@ if __name__ == "__main__":
     bc = np.array([93.0 * GHz,145. * GHz]) # Band center [Hz]
     fbw = np.array([.376, .276]) #Fractional bandwidth
     theta = np.deg2rad(15.0)
-
-    print(getIP("AluminaF", bc[1], fbw[1], theta)    )
+    
+    print(getDiffCoeffs("AluminaF", bc[1], fbw[1], theta)    )
 
 
         

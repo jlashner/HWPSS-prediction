@@ -1,0 +1,5 @@
+#
+Parameter			Unit	Value	Comment
+OpticalCouplingToFP		NA	1.00	
+Fnumber				NA	1.7	
+BathTemp			[K]	0.100	

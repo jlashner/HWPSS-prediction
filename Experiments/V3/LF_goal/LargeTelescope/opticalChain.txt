@@ -1,0 +1,25 @@
+#*****Opitcal Chain*****
+#
+Element		Temp   Thick   Index   LossTan   Conduct   Absorb		Spill		SpillTemp   SurfaceRough  Refl    ScattFrac   ScattTemp
+#		[K]    [mm]            [e-4]     [e6 S/m]  NA        		NA      	[K]         [um RMS]	  NA	  NA          [K]	
+Primary		273.0  NA      NA      NA        NA	   [0.000,0.000]        0.020           273.0       NA	          0.000   NA	      NA
+Mirror		273.0  NA      NA      NA        NA	   [0.000,0.000]        NA      	NA          NA	          0.000   NA	      NA	
+Mirror		273.0  NA      NA      NA        NA	   [0.000,0.000]        NA      	NA          NA	          0.000   NA	      NA
+Window		265.0  NA      NA      NA	 NA	   [0.001,0.002]	NA      	NA          NA	          0.010   NA	      NA
+IRShader1	291.0  NA      NA      NA	 NA	   [0.001,0.001]	NA              NA          NA	          0.000   NA          NA
+IRShader2	274.4  NA      NA      NA	 NA	   [0.001,0.001]	NA              NA          NA		  0.000   NA          NA  
+IRShader1	243.2  NA      NA      NA	 NA        [0.001,0.001]	NA              NA          NA            0.000   NA          NA  
+IRShader2	197.0  NA      NA      NA	 NA        [0.001,0.001]	NA              NA          NA	          0.000   NA          NA 
+AluminaF	80.98  2.00    3.10    0.5	 NA	   NA                   NA              NA          NA	          0.020   NA          NA
+IRShader1	69.19  NA      NA      NA	 NA	   [0.001,0.001]        NA              NA          NA            0.000   NA          NA  
+IRShader2	58.96  NA      NA      NA	 NA        [0.001,0.001]        NA              NA          NA	          0.000   NA          NA  
+AluminaF	40.02  2.00    3.10    0.5	 NA        NA		        NA              NA          NA	          0.020   NA          NA
+LowPass1	39.30  NA      NA      NA	 NA	   [0.010,0.010]	NA              NA          NA	          0.050   NA          NA
+Lens		4.500  NA      NA      NA	 NA	   [0.002,0.003]	NA      	NA          NA	          0.006   NA	      NA
+LowPass1	4.010  NA      NA      NA	 NA	   [0.010,0.010]	NA              NA          NA	          0.050   NA          NA
+Lens		1.200  NA      NA      NA	 NA	   [0.002,0.003]	NA      	NA          NA	          0.006   NA	      NA
+Aperture	1.200  NA      NA      NA	 NA	   NA            	NA      	NA          NA	          NA	  NA	      NA
+LowPass1	1.000  NA      NA      NA	 NA	   [0.010,0.010]	NA              NA          NA	          0.050   NA          NA       
+LowPass2	1.000  NA      NA      NA	 NA	   [0.010,0.010]	NA              NA          NA		  0.050   NA	      NA
+Lens		1.200  NA      NA      NA	 NA	   [0.002,0.003]	NA      	NA          NA	          0.006   NA	      NA
+LowPass1	0.100  NA      NA      NA	 NA	   [0.010,0.010]	NA              NA          NA	          0.050   NA          NA

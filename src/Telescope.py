@@ -73,8 +73,10 @@ class Telescope:
         # Watts to KCMB
         aniSpec  = lambda x: th.aniPowSpec(1, x, Tcmb)
         self.toKcmb = 1/intg.quad(aniSpec, self.det.flo, self.det.fhi)[0]
+        self.toKcmb /= self.cumEff(self.det.band_center)
         # Watts to KRJ
         self.toKRJ = 1 /(th.kB *self.det.band_center * self.det.fbw)
+        self.toKRJ /= self.cumEff(self.det.band_center)
         
         #Propagates Unpolarized Spectrum through each element
         self.propSpectrum()        
@@ -205,13 +207,13 @@ class Telescope:
         A4TSpec     = np.array(A4TSpec) * eff
         A4RSpec     = np.array(A4RSpec) * eff
 #        
-#        print("A2 from Transmission: %f"%(th.powFromSpec(self.freqs, A2TSpec)*self.toKcmb))
-#        print("A2 from Reflection: %f"%(th.powFromSpec(self.freqs, A2RSpec)*self.toKcmb))
-#        print("A2 from Emission: %f"%(th.powFromSpec(self.freqs, A2emitted)*self.toKcmb))
-#        
-#        print("A4 from Transmission: %f"%(th.powFromSpec(self.freqs, A4TSpec)*self.toKcmb))
-#        print("A4 from Reflection: %f"%(th.powFromSpec(self.freqs, A4RSpec)*self.toKcmb))
-#
+        print("A2 from Transmission: %f"%(th.powFromSpec(self.freqs, A2TSpec)*self.toKcmb))
+        print("A2 from Reflection: %f"%(th.powFromSpec(self.freqs, A2RSpec)*self.toKcmb))
+        print("A2 from Emission: %f"%(th.powFromSpec(self.freqs, A2emitted)*self.toKcmb))
+        
+        print("A4 from Transmission: %f"%(th.powFromSpec(self.freqs, A4TSpec)*self.toKcmb))
+        print("A4 from Reflection: %f"%(th.powFromSpec(self.freqs, A4RSpec)*self.toKcmb))
+
         
         # Calculation of total A2 and A4 signals
         self.A4 =  th.powFromSpec(self.freqs, A4TSpec) + th.powFromSpec(self.freqs, A4RSpec)
@@ -231,9 +233,8 @@ class Telescope:
             a2spec.append(a2)
             a4spec.append(a4)
             
-        self.a2 = np.mean(a2spec) * self.cumEff(self.det.band_center)
-        self.a4 = np.mean(a4spec)* self.cumEff(self.det.band_center)
-        
+        self.a2 = np.mean(a2spec)
+        self.a4 = np.mean(a4spec)
 
 
 
@@ -304,6 +305,7 @@ class Telescope:
         headers = ["Location",  "A4", "A4", "A2", "A2"]
         units = ["", "[pW]", "[KRJ]", "[pW]", "[KRJ]"]
         atDet = np.array([self.A4 * pW, self.A4 * self.toKRJ, self.A2 * pW, self.A2 * self.toKRJ])
+        atDet *= self.cumEff(self.det.band_center)
         atEntrance = atDet / self.cumEff(self.det.band_center)
         
         tableString += self._formatRow(headers)
@@ -344,11 +346,16 @@ class Telescope:
 if __name__=="__main__":
 
     config = json.load(open("../run/config.json"))
-    print("theta\tA2\tA4\ta2\ta4")
-    for theta in range(21):
-        config["theta"] = np.deg2rad(theta)
-        tel = Telescope(config)
-        print("%d\t%.5f\t%.5f\t%.5f\t%.5f"%(theta, tel.A2 * tel.toKcmb, tel.A4 * tel.toKcmb, tel.a2*100, tel.a4*100))
-            
+    config["theta"] = np.deg2rad(20.)
+    tel = Telescope(config)
+    print("A2: %.4f, A4: %.4f"%(tel.A2*tel.toKcmb, tel.A4*tel.toKcmb))
+    print("a2: %.4f, a4: %.4f"%(tel.a2*100, tel.a4*100))
+    
+#    print("theta\tA2\tA4\ta2\ta4")
+#    for theta in range(21):
+#        config["theta"] = np.deg2rad(theta)
+#        tel = Telescope(config)
+#        print("%d\t%.5f\t%.5f\t%.5f\t%.5f"%(theta, tel.A2 * tel.toKcmb, tel.A4 * tel.toKcmb, tel.a2*100, tel.a4*100))
+#            
 
     
