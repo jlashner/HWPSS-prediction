@@ -29,8 +29,8 @@ def ARCoat(n, lam0, layers = 2):
     elif layers == 1:
         nAR = [real(n)**(1./2)]
         
+    dAR = [lam0 / (4 * real(n)) for n in nAR]
 
-    dAR = list(map(lambda x : lam0 / (4.0 * real(x)), nAR))
     return nAR, dAR
 
 
@@ -44,13 +44,29 @@ def getCoeffs(n, d, freq, theta, pol):
 
 def getDiffCoeffs(name, band_center, fbw, theta):
     """Returns the differential transmission and differential coefficient of an optical element"""
-    lam0 = 2.5 #[mm]
-    lam0 = 1.1
+    
+    #Determines band and calculates corresponding optimized wavelength    
+    if band_center < 50 * GHz:   #LF Band
+        nu0 = 33 * GHz
+        lam0 = 3e3 / nu0 * 1000 #[mm]]
+        lam0 = 9.09 #[mm]
+        layers = 2
+    elif band_center < 200 * GHz: #MF Band
+        nu0 = 120 * GHz
+        lam0 = 2.5 #[mm]
+        layers = 2
+    elif band_center < 300 * GHz: #UHF Band
+        nu0 = 267 * GHz
+        lam0 = 1.123 #[mm]
+        layers = 1
+    else:
+        print("Frequency not in any band.")
+        raise ValueError
+            
+
     flo = band_center * (1 - fbw/ 2.)
     fhi = band_center * (1 + fbw/ 2.)
-    flo = 200 * GHz
-    fhi = 300 * GHz
-    
+
     if name == "Window":
         n0 =  1.5 + .0001j
         d0 = 5.0
@@ -60,7 +76,7 @@ def getDiffCoeffs(name, band_center, fbw, theta):
     else:
         return (0,0)
         
-    nAR, dAR = ARCoat(n0, lam0, layers = 2)
+    nAR, dAR = ARCoat(n0, lam0, layers = layers)
     n_stack = [1.0] + nAR + [n0] + nAR[::-1] + [1.0]
     d_stack = [Inf] + dAR + [d0] + dAR[::-1] + [Inf]
     
@@ -72,11 +88,6 @@ def getDiffCoeffs(name, band_center, fbw, theta):
     Ts, Rs, As = np.transpose(s_coeffs)
     Tp, Rp, Ap = np.transpose(p_coeffs)
     
-    plt.plot(freqs, Ts)
-    plt.plot(freqs, Rs)
-    plt.plot(freqs, As)
-    plt.ylim(0, 1)
-    plt.show()
     
     #Band-averages differential transmission, reflection and absorption    
     diffTrans =  abs(intg.simps((Ts - Tp)/2, freqs)/(band_center * fbw))
@@ -87,11 +98,13 @@ def getDiffCoeffs(name, band_center, fbw, theta):
 
 
 if __name__ == "__main__":
-    bc = np.array([93.0 * GHz,145. * GHz]) # Band center [Hz]
-    fbw = np.array([.376, .276]) #Fractional bandwidth
-    theta = np.deg2rad(15.0)
-    
-    print(getDiffCoeffs("AluminaF", bc[1], fbw[1], theta)    )
+    bc = np.array([27., 39., 93.0,145., 225., 278.]) * GHz # Band center [Hz]
+    fbw = np.array([.222, .462, .376, .276, .267, .278]) #Fractional bandwidth
+    theta = np.deg2rad(20.0)
+    index = 5
+    for index in range(6):
+        print(getDiffCoeffs("AluminaF", bc[index], fbw[index], theta)[0])
+
 
 
         

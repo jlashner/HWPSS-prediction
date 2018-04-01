@@ -148,18 +148,16 @@ def loadAtm(atmFile, det):
     """Loads an optical element from specified atmosphere file"""
     freqs, temps, trans = np.loadtxt(atmFile, dtype=np.float, unpack=True, usecols=[0, 2, 3]) #frequency/tempRJ/efficiency arrays from input files
     freqs*=GHz # [Hz]
-    
+##    
     atmTemp = 300. # [K]
     emis = temps / atmTemp
     e = OpticalElement("Atm", det, atmTemp, {"Freqs": freqs, "EffCurve": trans, "EmisCurve": emis})
     return e
     
-    #Reads Rayleigh Jeans temperature from file and takes average
-#    tempF = interpolate.interp1d(freqs, temps, kind = "linear")
-#    x = np.linspace(det.flo, det.fhi, 400)
-#    y = tempF(x)
-#    aveTemp = intg.simps(y, x=x)/(det.fhi - det.flo)
-#    e = OpticalElement("Atm", det, aveTemp, {"Freqs": freqs, "EffCurve": trans})
+#    absorp = 1 - trans
+#    mask = [det.flo < f < det.fhi for f in freqs]
+#    a = np.mean(np.extract(absorp, mask))
+#    e = OpticalElement("Atm", det, 273, {"Absorb": a})
 #    
 #    return e
 

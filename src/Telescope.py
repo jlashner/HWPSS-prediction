@@ -79,7 +79,7 @@ class Telescope:
         self.toKRJ /= self.cumEff(self.det.band_center)
         
         #Propagates Unpolarized Spectrum through each element
-        self.propSpectrum()        
+        self.propSpectrum(ReflectionOrder = 2)        
         # Gets A2, A4, a2 and a4
         self.getHWPSS(fit = True)
 
@@ -184,6 +184,7 @@ class Telescope:
         for (i, f) in enumerate(self.freqs):
             
             A2T, A4T = self.hwp.getHWPSS(f, np.array([IT[i],QT[i], 0, 0]), reflected = False, fit = fit)
+            
             A2TSpec.append(A2T)
             A4TSpec.append(A4T)
             
@@ -207,12 +208,12 @@ class Telescope:
         A4TSpec     = np.array(A4TSpec) * eff
         A4RSpec     = np.array(A4RSpec) * eff
 #        
-        print("A2 from Transmission: %f"%(th.powFromSpec(self.freqs, A2TSpec)*self.toKcmb))
-        print("A2 from Reflection: %f"%(th.powFromSpec(self.freqs, A2RSpec)*self.toKcmb))
-        print("A2 from Emission: %f"%(th.powFromSpec(self.freqs, A2emitted)*self.toKcmb))
-        
-        print("A4 from Transmission: %f"%(th.powFromSpec(self.freqs, A4TSpec)*self.toKcmb))
-        print("A4 from Reflection: %f"%(th.powFromSpec(self.freqs, A4RSpec)*self.toKcmb))
+#        print("A2 from Transmission: %f"%(th.powFromSpec(self.freqs, A2TSpec)*self.toKcmb))
+#        print("A2 from Reflection: %f"%(th.powFromSpec(self.freqs, A2RSpec)*self.toKcmb))
+#        print("A2 from Emission: %f"%(th.powFromSpec(self.freqs, A2emitted)*self.toKcmb))
+#        
+#        print("A4 from Transmission: %f"%(th.powFromSpec(self.freqs, A4TSpec)*self.toKcmb))
+#        print("A4 from Reflection: %f"%(th.powFromSpec(self.freqs, A4RSpec)*self.toKcmb))
 
         
         # Calculation of total A2 and A4 signals
@@ -347,9 +348,16 @@ if __name__=="__main__":
 
     config = json.load(open("../run/config.json"))
     config["theta"] = np.deg2rad(20.)
-    tel = Telescope(config)
-    print("A2: %.4f, A4: %.4f"%(tel.A2*tel.toKcmb, tel.A4*tel.toKcmb))
-    print("a2: %.4f, a4: %.4f"%(tel.a2*100, tel.a4*100))
+    config["WriteOutput"] = False
+    
+    for band in ["LF", "MF", "UHF"]:
+        for bid in [1,2]:
+            config["bandID"] = bid
+            config["ExperimentDirectory"]="../Experiments/V3/%s_baseline/SmallTelescope"%band
+            tel = Telescope(config) 
+            print("Freq: %f GHz"%(tel.det.band_center / GHz))
+            print("A2: %.4f, A4: %.4f"%(tel.A2*tel.toKcmb, tel.A4*tel.toKcmb))
+            print("a2: %.4f, a4: %.4f"%(tel.a2*100, tel.a4*100))
     
 #    print("theta\tA2\tA4\ta2\ta4")
 #    for theta in range(21):

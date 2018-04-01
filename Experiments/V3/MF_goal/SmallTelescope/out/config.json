@@ -1,0 +1,14 @@
+{
+    "AtmosphereFile": "../src/Atacama_1000um_60deg.txt",
+    "BandCenter": null,
+    "ExperimentDirectory": "../Experiments/V3/MF_goal/SmallTelescope",
+    "FBW": null,
+    "HWPDir": "../HWP/3LayerSapphire",
+    "HWPDirectory": "../HWP/3LayerSapphire/",
+    "LowerFreq": null,
+    "OutputDirectory": "out",
+    "UpperFreq": null,
+    "WriteOutput": true,
+    "bandID": 2,
+    "theta": 0.3490658503988659
+}

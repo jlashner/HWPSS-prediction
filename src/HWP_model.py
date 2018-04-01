@@ -34,6 +34,19 @@ class HWP:
         self.name = "HWP"
         self.temp = temp 
         self.freqs = det.freqs
+        
+        if det.band_center < 60 * GHz:
+            band = "LF"
+        elif det.band_center < 200 * GHz:
+            band = "MF"
+        elif det.band_center < 300 * GHz:
+            band = "UHF"
+        else:
+            print("Can't determine band")
+            raise ValueError
+            
+        hwpDir = os.path.join(hwpDir, band)
+        
         matFile = os.path.join(hwpDir, "materials.txt")
         stackFile = os.path.join(hwpDir, "stack.txt")
         
@@ -75,7 +88,9 @@ class HWP:
         
         self.A2upT, self.A4upT, self.A2ppT, self.A4ppT = map(np.array,  [self.A2upT, self.A4upT, self.A2ppT, self.A4ppT])
         self.A2upR, self.A4upR, self.A2ppR, self.A4ppR = map(np.array,  [self.A2upR, self.A4upR, self.A2ppR, self.A4ppR])
-            
+        
+        
+        
 
         # =============================================================================
         #    Calculates average trans and reflection Mueller matrices 
@@ -261,10 +276,19 @@ def fitAmplitudesBand(stack, freqs, theta, stokes, reflected = False):
         A4.append(popt[4])
     return np.array(A2), np.array(A4)
 
-def calcHWPSSCoeffs(theta = 0.0, reflected = False):
+def calcHWPSSCoeffs(theta = 0.0, reflected = False, band = "MF"):
     
     labels = np.array(["freqs", "A2up", "A4up", "A2pp", "A4pp"])
-    freqs= np.linspace(50 * GHz, 200 * GHz, 200)
+    
+    if band == "LF":
+        freqs = np.linspace(5 * GHz, 60 * GHz, 200)
+    elif band == "MF":
+        freqs= np.linspace(50 * GHz, 200 * GHz, 200)
+    elif band == "UHF":
+        freqs = np.linspace(150 * GHz, 330 * GHz, 200)
+    else:
+        print("Band must be LF, MF, or UHF")
+        raise ValueError
     
     A2up, A4up = fitAmplitudesBand(stack, freqs, theta, stokes = np.array([1,0,0,0]), reflected = reflected)
     A2pp, A4pp = fitAmplitudesBand(stack, freqs, theta, stokes = np.array([1,1,0,0]), reflected = reflected)
@@ -274,55 +298,26 @@ def calcHWPSSCoeffs(theta = 0.0, reflected = False):
 
 
 if __name__ == "__main__":
+    pass
+#    band = "UHF"
+#    hwpdir = "../HWP/3LayerSapphire/%s/"%band
+#    datadir = os.path.join(hwpdir + "HWPSS_data/")
+#    materials = loadMaterials(os.path.join(hwpdir, "materials.txt"))
+#    stack       = loadStack(materials, os.path.join(hwpdir, "stack.txt"))      
 
-#    for theta in [0, 5, 10, 15, 20]:
-#        data = np.load("../HWP/3LayerSapphire/HWPSS_data/%s_deg/Trans.npy"%theta)  
-#        print(np.mean(data[3]))
-#        plt.plot(data[1], data[5])
+    
+    
+#    for theta in [0, 20]:#range(21):
+#        path = datadir + "%d_deg/"%(theta)
 #
-#    plt.show()
-
-
-    hwpdir = "../HWP/3LayerSapphire/"
-    datadir = os.path.join(hwpdir + "HWPSS_data/")
-    materials = loadMaterials(os.path.join(hwpdir, "materials.txt"))
-    stack       = loadStack(materials, os.path.join(hwpdir, "stack.txt"))      
-    
-    for theta in range(21):
-        path = datadir + "%d_deg/"%(theta)
-
-        if (os.path.exists(os.path.join(path, "Refl.npy"))):
-            print("Skipping")
-            continue
-        os.makedirs(path, exist_ok = True)
-            
-        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = False)
-        np.save(path + "Trans", data)
-        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = True)
-        np.save(path + "Refl", data)
-##        
-#    data = calcHWPSSCoeffs()
-    
-    
-#    freqs= np.linspace(50 * GHz, 200 * GHz, 200)
-#    A2upT, A4upT = fitAmplitudesBand(stack, freqs, np.deg2rad(0.), stokes = np.array([1,0,0,0]), reflected = False)
-#    A2ppT, A4ppT = fitAmplitudesBand(stack, freqs, np.deg2rad(0.), stokes = np.array([1,1,0,0]), reflected = False)
-#    
-#    A2upR, A4upR = fitAmplitudesBand(stack, freqs, np.deg2rad(0.), stokes = np.array([1,0,0,0]), reflected = True)
-#    A2ppR, A4ppR = fitAmplitudesBand(stack, freqs, np.deg2rad(0.), stokes = np.array([1,1,0,0]), reflected = True)
-#    
-#    labels = np.array(["freqs", "A2up", "A4up", "A2pp", "A4pp"])
-#    
-#    data1 = np.array([labels, freqs, A2upT, A4upT, A2ppT, A4ppT])
-#    np.save("../HWP/3LayerSapphire/HWPSS_Trans_0deg",data1)
-#    
-#    data2 = np.array([labels, freqs, A2upR, A4upR, A2ppR, A4ppR])
-#    np.save("../HWP/3LayerSapphire/HWPSS_Refl_0deg",data2)
-    
-    
-#    plt.plot(freqs, A4ppT)
-#    plt.show()
-    
-    
-    
-#    
+#        if (os.path.exists(os.path.join(path, "Refl.npy"))):
+#            print("Skipping")
+#            continue
+#        os.makedirs(path, exist_ok = True)
+#            
+#        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = False, band = band)
+#        plt.plot(data[1], data[5])
+#        np.save(path + "Trans", data)
+#        plt.plot(data[1], data[5])
+#        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = True, band = band)
+#        np.save(path + "Refl", data)

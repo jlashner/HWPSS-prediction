@@ -1,0 +1,9 @@
+##	name 		thickness		angle
+##				[mm]			[deg]
+AR1				0.18			0.0
+AR2				0.11			0.0
+Sapphire		1.10			0.0
+Sapphire		1.10			54
+Sapphire		1.10			0.0
+AR2				0.11			0.0
+AR1				0.18			0.0
