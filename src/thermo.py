@@ -57,7 +57,7 @@ def aniPowSpec(emis, freq, temp=Tcmb):
     """Derivative of BB spectrum"""
     e = emis(freq) if callable(emis) else emis
     occ = 1.0/(np.exp(h*freq/(temp*kB)) - 1)
-    return ((h**2)/kB)*e*(occ**2)*((freq**2)/(temp**2))*np.exp((h*freq)/(kB*temp))
+    return (2 * (h**2)/kB)*e*(occ**2)*((freq**2)/(temp**2))*np.exp((h*freq)/(kB*temp))
 
 
 if __name__=="__main__":

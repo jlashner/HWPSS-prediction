@@ -64,6 +64,9 @@ class OpticalElement:
                        
         self.updateParams(params)
 
+    def __repr__(self):
+        return f"OpticalElement({self.name}, {self.temp} K)"
+
     def updateParams(self, modifiedParams):
         self.params.update(modifiedParams)
     
@@ -151,6 +154,7 @@ def loadAtm(atmFile, det):
 ##    
     atmTemp = 300. # [K]
     emis = temps / atmTemp
+    
     e = OpticalElement("Atm", det, atmTemp, {"Freqs": freqs, "EffCurve": trans, "EmisCurve": emis})
     return e
     

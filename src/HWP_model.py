@@ -89,7 +89,7 @@ class HWP:
         self.A2upT, self.A4upT, self.A2ppT, self.A4ppT = map(np.array,  [self.A2upT, self.A4upT, self.A2ppT, self.A4ppT])
         self.A2upR, self.A4upR, self.A2ppR, self.A4ppR = map(np.array,  [self.A2upR, self.A4upR, self.A2ppR, self.A4ppR])
         
-        
+        self.p = None
         
 
         # =============================================================================
@@ -175,25 +175,17 @@ class HWP:
             If fit is true, returns fit from file.
         """
         if not fit:
-            I = stokes[0]
-            Q = stokes[1]
-            
-            M = self.Mueller(freq, reflected = reflected)
-            
-            
-            A2 = .5 * ((I * M[1,0] + Q * M[0,1])**2 + (I * M[2,0] + Q * M[0,2])**2)**.5
-            A4 = .25 * (Q * Q * ((M[1,2] + M[2,1])**2 + (M[1,1] - M[2,2])**2))**.5
-            
-        else:           
-#            p= fitAmplitudes(self.stack, freq, self.theta, stokes, reflected = reflected)
-#            A2, A4 = abs(p[2]), abs(p[4])
             if not reflected:
                 A4 = abs(stokes[1] * np.interp(freq, self.freqs, self.A4ppT)) + abs((stokes[0]-stokes[1]) * np.interp(freq, self.freqs, self.A4upT))
                 A2 = abs(stokes[1] * np.interp(freq, self.freqs, self.A2upT)) + abs((stokes[0]-stokes[1]) * np.interp(freq, self.freqs, self.A2upT))
             else:
                 A4 = abs(stokes[1] * np.interp(freq, self.freqs, self.A4ppR)) + abs((stokes[0]-stokes[1]) * np.interp(freq, self.freqs, self.A4upR))
                 A2 = abs(stokes[1] * np.interp(freq, self.freqs, self.A2upR)) + abs((stokes[0]-stokes[1]) * np.interp(freq, self.freqs, self.A2upR))
-            
+
+        else:
+            self.p = fitAmplitudes(self.stack, freq, self.theta, stokes, reflected = reflected, p = self.p)
+            A2, A4 = abs(self.p[2]), abs(self.p[4])
+
         return A2, A4
     
     def fit1 (self, freq, stokes, reflected = False):
@@ -299,25 +291,19 @@ def calcHWPSSCoeffs(theta = 0.0, reflected = False, band = "MF"):
 
 if __name__ == "__main__":
     pass
-#    band = "UHF"
-#    hwpdir = "../HWP/3LayerSapphire/%s/"%band
-#    datadir = os.path.join(hwpdir + "HWPSS_data/")
-#    materials = loadMaterials(os.path.join(hwpdir, "materials.txt"))
-#    stack       = loadStack(materials, os.path.join(hwpdir, "stack.txt"))      
 
     
-    
-#    for theta in [0, 20]:#range(21):
-#        path = datadir + "%d_deg/"%(theta)
-#
-#        if (os.path.exists(os.path.join(path, "Refl.npy"))):
-#            print("Skipping")
-#            continue
-#        os.makedirs(path, exist_ok = True)
-#            
-#        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = False, band = band)
-#        plt.plot(data[1], data[5])
-#        np.save(path + "Trans", data)
-#        plt.plot(data[1], data[5])
-#        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = True, band = band)
-#        np.save(path + "Refl", data)
+   # for theta in [0, 20]:#range(21):
+   #     path = datadir + "%d_deg/"%(theta)
+   #
+   #     if (os.path.exists(os.path.join(path, "Refl.npy"))):
+   #         print("Skipping")
+   #         continue
+   #     os.makedirs(path, exist_ok = True)
+   #
+   #     data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = False, band = band)
+   #     plt.plot(data[1], data[5])
+   #     np.save(path + "Trans", data)
+   #     plt.plot(data[1], data[5])
+   #     data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = True, band = band)
+   #     np.save(path + "Refl", data)
