@@ -7,7 +7,7 @@ Created on Fri Feb  9 11:45:24 2018
 
 This script fits the demodulated HWP signal to a sum of HWP harmonics. 
 It figures out how much (un)polarized signal is modulated into the A2 and A4 
-bands for each frequency and saves this to the HWPSS_data folder.
+bands for each frequency and saves this to the HWPSS folder.
 
 This data is required for the HWPSS prediction.
 
@@ -114,20 +114,27 @@ if __name__ == "__main__":
     mats = loadMaterials(os.path.join(HWP_dir, "materials.txt"))
     stack = loadStack(mats, os.path.join(HWP_dir, "stack.txt"))
     
-    freqs = np.linspace(1*GHz, 300*GHz, 200)
+    print(stack)
     
-    for theta in [0, 20]:#range(21):
-        path = os.path.join(datadir, "{}_deg".format(theta))
-        
-        if (os.path.exists(os.path.join(path, "Refl.npy"))):
-            print("Skipping")
-            continue
-        os.makedirs(path, exist_ok = True)
-   
-        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = False, band = band)
-        trans_fname = os.path.join(path, "Trans")
-        np.save(trans_fname, data)
-        
-        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = True, band = band)
-        refl_fname = os.path.join(path, "Refl")
-        np.save(refl_fname, data)
+    freqs = np.linspace(50*GHz, 200*GHz, 100)
+    A2, A4 = fitAmplitudesBand(stack, freqs, 0, np.array([1,0,0,0]), reflected = False)
+    
+    plt.plot(freqs, np.abs(A2))    
+    
+    
+#    
+#    for theta in [0, 20]:#range(21):
+#        path = os.path.join(datadir, "{}_deg".format(theta))
+#        
+#        if (os.path.exists(os.path.join(path, "Refl.npy"))):
+#            print("Skipping")
+#            continue
+#        os.makedirs(path, exist_ok = True)
+#   
+#        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = False, band = band)
+#        trans_fname = os.path.join(path, "Trans")
+#        np.save(trans_fname, data)
+#        
+#        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = True, band = band)
+#        refl_fname = os.path.join(path, "Refl")
+#        np.save(refl_fname, data)

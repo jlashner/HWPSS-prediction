@@ -141,9 +141,6 @@ class HWP:
         self.emis = []
         self.pemis = []
         for f in self.freqs:
-#            JT = tm.Jones(self.stack, f, self.theta, 0.0, reflected = False)
-#            JR = tm.Jones(self.stack, f, self.theta, 0.0, reflected = True)
-
             JT = tm.Jones(self.stack, f, 0.0, 0.0, reflected = False)
             JR = tm.Jones(self.stack, f, 0.0, 0.0, reflected = True)
             

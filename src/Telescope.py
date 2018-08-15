@@ -176,7 +176,6 @@ class Telescope:
         # Incoming and Reflected stokes parameters
         IT = self.hwp.unpolIncident + self.hwp.polIncident
         QT = self.hwp.polIncident 
-#        QT = np.zeros(np.shape(QT))
             
         IR = self.hwp.unpolReverse + self.hwp.polReverse
         QR = self.hwp.polReverse
@@ -195,7 +194,6 @@ class Telescope:
         test2 = []
         # Gets A2 and A4 for transmission and reflection at each frequency
         for (i, f) in enumerate(self.freqs):
-            
             A2T, A4T = self.hwp.getHWPSS(f, np.array([IT[i],QT[i], 0, 0]), reflected = False, fit = fit)            
             A2TSpec.append(A2T)
             A4TSpec.append(A4T)
@@ -216,9 +214,6 @@ class Telescope:
         # plt.show()
 
         A2emitted = .5 * self.hwp.polEmitted
-
-        
-        
         # Efficiency between HWP and detector
         eff = self.cumEff(self.freqs, start = self.hwpIndex)        
         # Modulated signal at the detector
@@ -238,15 +233,6 @@ class Telescope:
         print("A2 from Emission: %f"%(th.powFromSpec(self.freqs, A2emitted)* self.toKcmb * 2 / self.cumEff(self.det.band_center)))
         print("A4 from transmission: %f"%(th.powFromSpec(self.freqs, test)* self.toKcmb * 2 / self.cumEff(self.det.band_center)))
         print("A4 from Reflection: %f"%(th.powFromSpec(self.freqs, A4RSpec)* self.toKcmb * 2 / self.cumEff(self.det.band_center)))
-        
-#        A2_trans.append(th.powFromSpec(self.freqs, A2TSpec)* self.toKcmb * 2 / self.cumEff(self.det.band_center))
-#        A2_refl.append(th.powFromSpec(self.freqs, A2RSpec)* self.toKcmb * 2 / self.cumEff(self.det.band_center))
-#        A2_emit.append(th.powFromSpec(self.freqs, A2emitted)* self.toKcmb * 2 / self.cumEff(self.det.band_center))
-#        hwp_A4[0].append(th.powFromSpec(self.freqs, test)* self.toKcmb * 2 / self.cumEff(self.det.band_center))
-#        hwp_A4[1].append(th.powFromSpec(self.freqs, A4RSpec)* self.toKcmb * 2 / self.cumEff(self.det.band_center))
-#   
-#        print("A4 from Transmission: %f"%(th.powFromSpec(self.freqs, A4TSpec) * self.toKRJ))
-#        print("A4 from Reflection: %f"%(th.powFromSpec(self.freqs, A4RSpec)*self.toKcmb))
 
         
         # A2 and A4 signals seen by detector
@@ -324,75 +310,10 @@ if __name__=="__main__":
     config["Reflection Order"] = 10
     tel = Telescope(config)
 
-#    atm = tel.elements[1]
-#    plt.plot(tel.freqs, atm.unpolEmitted * tel.toKRJ)
-#    
-#    win = tel.elements[2]
-
-#    print("Atmosphere power: ",    th.powFromSpec(tel.freqs,atm.unpolEmitted) * tel.toKcmb)
-#
-#    print("Window power: ",    th.powFromSpec(tel.freqs,win.unpolEmitted) * tel.toKcmb)
-#    
-#    eff = tel.cumEff(tel.det.band_center)
-#    
-#    al_filter = tel.elements[7]
-#    window = tel.elements[2]
-#    print("Filter diff trans: ", al_filter.Ip(tel.det.band_center)*100)
-#    print("Window diff trans: ", window.Ip(tel.det.band_center)*100)
-#    
-#    print("Filter IP: ", th.powFromSpec(tel.freqs, al_filter.IpTransmitted) * tel.toKcmb / tel.cumEff(tel.det.band_center, end=7))
-#    print("Filter polReflection: ", th.powFromSpec(tel.freqs, al_filter.unpolReverse * al_filter.pRefl(tel.freqs)) * tel.toKcmb / tel.cumEff(tel.det.band_center, end=7))
-#    print("Window IP: ", th.powFromSpec(tel.freqs, window.IpTransmitted) * tel.toKcmb / tel.cumEff(tel.det.band_center, end=3))
-#    print("Window polReflection: ", th.powFromSpec(tel.freqs, window.unpolReverse * window.pRefl(tel.freqs)) * tel.toKcmb / tel.cumEff(tel.det.band_center, end=3))
-
-
-    print("A2: %f"%(tel.A2_Kcmb))
-    print("a2: %f"%(tel.a2 * 100))
-    print("A4: %f"%(tel.A4_Kcmb))
-    print("a4: %f"%(tel.a4 * 100))
-    
-#    angles = np.arange(0, 21)
-#    #Trans, refl
-#    win_A4 = [[],[]]
-#    al_A4 = [[],[]]
-#    hwp_A4 = [[],[]]
-#    
-#    A2_trans = []
-#    A2_refl = []
-#    A2_emit = []
-    
-#    for theta in tqdm(angles):
-#        config["theta"] = np.deg2rad(theta)
-#        tel = Telescope(config)
-#    
-#        al_filter = tel.elements[7]
-#        window = tel.elements[2]
-#        hwp = tel.hwp
-#        
-#        al_A4[0].append(th.powFromSpec(tel.freqs, al_filter.IpTransmitted) \
-#             * tel.toKcmb / tel.cumEff(tel.det.band_center, end=7))
-#        al_A4[1].append(th.powFromSpec(tel.freqs, al_filter.unpolReverse * al_filter.pRefl(tel.freqs)) * tel.toKcmb / tel.cumEff(tel.det.band_center, end=7))
-#        
-#        win_A4[0].append(th.powFromSpec(tel.freqs, window.IpTransmitted) * tel.toKcmb / tel.cumEff(tel.det.band_center, end=3))
-#        win_A4[1].append(th.powFromSpec(tel.freqs, window.unpolReverse * window.pRefl(tel.freqs)) * tel.toKcmb / tel.cumEff(tel.det.band_center, end=3))
-
-#    for band in ["LF", "MF", "UHF"]:
-#        for bid in [1,2]:
-#            config["bandID"] = bid
-#            config["ExperimentDirectory"]="../Experiments/V3/%s_baseline/SmallTelescope"%band
-#            tel = Telescope(config) 
-#            print("Freq: %f GHz"%(tel.det.band_center / GHz))
-#            print("A2: %.4f, A4: %.4f"%(tel.A2*tel.toKcmb, tel.A4*tel.toKcmb))
-#            print("a2: %.4f, a4: %.4f"%(tel.a2*100, tel.a4*100))
-    
-#
-#    
-#    with open("../HWPSS_145GHz.txt", 'w') as file:
-#         file.write("theta\tA2\tA4\ta2\ta4\n")
-#         for theta in range(21):
-#             config["theta"] = np.deg2rad(theta)
-#             tel = Telescope(config)
-#             file.write("%d\t%.5f\t%.5f\t%.5f\t%.5f\n"%(theta, tel.A2_Kcmb, tel.A4_Kcmb, tel.a2*100, tel.a4*100))
-         
-
+    print("\n HWPSS output\n" + "-"* 20)
+    print("A2: %f K_cmb"%(tel.A2_Kcmb))
+    print("a2: %f %%"%(tel.a2 * 100))
+    print("A4: %f K_cmb"%(tel.A4_Kcmb))
+    print("a4: %f %%"%(tel.a4 * 100))
+    print("-"*20)
     
