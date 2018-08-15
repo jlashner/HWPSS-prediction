@@ -30,4 +30,4 @@ As input, the code requires:
 These are passed as a dictionary to to Telescope when initialized. A sample config file can be found in `/run/config.json`.  
 
 ## Running the code 
-You can run Telescope.py to find 
+You can run Telescope.py to find HWPSS values for a given experiment. You can run HWPSS_Fit.py to play with how the HWP stack effects the A2 and A4 signals.
