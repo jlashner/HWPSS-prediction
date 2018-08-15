@@ -23,14 +23,8 @@ As input, the code requires:
 
 - `ExperimentDirectory`: An experiment directory, containing `camera.txt`, `channels.txt`, and `opticalChain.txt`. These are the same input files required by Charlie Hill's sensitivity calculations, and detailed descriptions of them can be found [on his github page.](https://github.com/smsimon/sensitivity_calculators/tree/master/SO_SensitivityCalculator/CHillCalc)
 - `AtmosphereFile`: A file containing the atmosphere spectrum.
-- `HWPFile`: A file containing the Half wave plate Mueller matrix
+- `HWPDirectory`: Directory containing HWP stack information and HWPSS fitted data.
 - `theta`: the incident angle of the incoming light
 - `bandID`: The channel of the detector file being used. (1 or 2).
 
 These are passed as a dictionary to to Telescope when initialized. A sample config file can be found in `/run/config.json`.  
-
-## Running the code
-
-A sample file that creates a telescope and prints A2 and A4 can be seen in `/run/runHWPSS.py`. 
-
-The jupyter nb file `/run/HWPSS_demonstration.ipynb` shows off some other functionality of the code.

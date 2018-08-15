@@ -132,7 +132,8 @@ if __name__ == "__main__":
 #        os.makedirs(path, exist_ok = True)
 #   
 #        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = False, band = band)
-#        trans_fname = os.path.join(path, "Trans")
+#        trans_fname = os.path.join(path, "Trans")ls
+    
 #        np.save(trans_fname, data)
 #        
 #        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = True, band = band)
