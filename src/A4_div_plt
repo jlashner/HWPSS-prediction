@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jun  1 13:22:00 2018
+
+@author: jacoblashner
+"""
+
+def A2_plot():
+    trans, refl, emit = np.load("A2_div.npy")
+    angles = np.arange(0, 21)
+    
+    trans *= 1000
+    refl *= 1000
+    emit *= 1000
+    
+    plt.plot(angles, trans, label="HWP Transmission")
+    plt.plot(angles, refl, label="HWP Reflection")
+    plt.plot(angles, emit, label="HWP Emission")
+    
+    plt.ylim(0, 310)
+    plt.xlim(0, 20)
+    plt.legend(loc=2)
+    plt.title(r"$A_2$ composition at 145 GHz", fontsize = 18)
+    plt.xlabel(r"$\theta$ (deg)", fontsize = 16)
+    plt.ylabel(r"$A_2$ (mK$_{CMB}$)", fontsize =16)
+    plt.savefig("../A2_div.pdf")
+    plt.show()
+    
+
+def A4_plot():
+    win, hwp, al = np.load("A4_div.npy")
+    angles = np.arange(0, 21)
+    
+    win *= 1000
+    hwp *= 1000
+    al *= 1000
+    
+    plt.plot(angles, win[0], 'C0', label="Window Transmitted")
+    plt.plot(angles, win[1], 'C0--',label="Window Refllected")
+    
+    plt.plot(angles, al[0], 'C1', label="Alumina Transmitted")
+    plt.plot(angles, al[1], 'C1--', label="Alumina Reflected")
+    
+    plt.plot(angles, hwp[0], 'C2', label="HWP Transmitted")
+    plt.plot(angles, hwp[1], 'C2--', label="HWP Reflected")
+    
+    plt.xlabel(r"$\theta$ (deg)", fontsize=16)
+    plt.ylabel(r"$A_4$ (mK$_{CMB}$)", fontsize=16)
+    
+    plt.title(r"$A_4$ composition at 145 GHz", fontsize=18)
+    plt.legend()
+    plt.savefig("/Users/jacoblashner/Desktop/A4_div.pdf")
+    plt.show()
+
+A4_plot()

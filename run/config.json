@@ -1,7 +1,7 @@
 {
-    "ExperimentDirectory": "../Experiments/V3/UHF_baseline/SmallTelescope",
+    "ExperimentDirectory": "../Experiments/V3/MF_baseline/SmallTelescope",
     "HWPDirectory": "../HWP/3LayerSapphire",
-    "AtmosphereFile": "../src/Atacama_1000um_60deg.txt",
+    "AtmosphereFile": "../src/Atacama_1000um_50deg.txt",
     "theta": 0.3490658503988659,
     "bandID": 1,
     

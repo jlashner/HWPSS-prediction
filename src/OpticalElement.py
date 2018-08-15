@@ -147,23 +147,24 @@ class OpticalElement:
 ###############################################################################
 #    Loads individual types of Optical Elements
 ###############################################################################
-def loadAtm(atmFile, det):
+def loadAtm(atmFile, det, toKcmb, toKRJ):
     """Loads an optical element from specified atmosphere file"""
     freqs, temps, trans = np.loadtxt(atmFile, dtype=np.float, unpack=True, usecols=[0, 2, 3]) #frequency/tempRJ/efficiency arrays from input files
     freqs*=GHz # [Hz]
 ##    
     atmTemp = 300. # [K]
-    emis = temps / atmTemp
+    emis = temps * toKRJ / toKcmb / atmTemp
     
     e = OpticalElement("Atm", det, atmTemp, {"Freqs": freqs, "EffCurve": trans, "EmisCurve": emis})
     return e
     
-#    absorp = 1 - trans
+    absorp = 1 - trans
 #    mask = [det.flo < f < det.fhi for f in freqs]
+    
 #    a = np.mean(np.extract(absorp, mask))
-#    e = OpticalElement("Atm", det, 273, {"Absorb": a})
-#    
-#    return e
+    e = OpticalElement("Atm", det, 273, {"Freqs": freqs, "EffCurve": trans, "EmisCurve": 1 - trans})
+    
+    return e
 
 
 def loadHWP(hwp, theta, det):

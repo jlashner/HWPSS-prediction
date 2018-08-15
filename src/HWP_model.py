@@ -69,8 +69,12 @@ class HWP:
         self.materials = loadMaterials(matFile)
         self.stack = loadStack(self.materials, stackFile)
         
+        self.thickness = 0.003
+        self.thickness = sum(self.stack.thicknesses[2:-2] )
+        
         _, fs, A2upT, A4upT, A2ppT, A4ppT = np.load(HWPSS_transFile)
         _, _, A2upR, A4upR, A2ppR, A4ppR = np.load(HWPSS_reflFile)
+        
 
         # Resample fns to have same length as detector frequency
         self.A2upT, self.A4upT, self.A2ppT, self.A4ppT = [], [], [], []
@@ -88,7 +92,6 @@ class HWP:
         
         self.A2upT, self.A4upT, self.A2ppT, self.A4ppT = map(np.array,  [self.A2upT, self.A4upT, self.A2ppT, self.A4ppT])
         self.A2upR, self.A4upR, self.A2ppR, self.A4ppR = map(np.array,  [self.A2upR, self.A4upR, self.A2ppR, self.A4ppR])
-        
         self.p = None
         
 
@@ -151,7 +154,20 @@ class HWP:
         return np.interp(freq, self.freqs, self.emis)
     
     def pEmis(self, freq):
-        return np.interp(freq, self.freqs, self.pemis)
+        
+        tdo = 2e-6
+        tde = 1e-6
+        no = 3.05
+        ne = 3.38
+        
+        ao = 2 * np.pi  * no * tdo * freq / (3e8) #1/m
+        ae = 2 * np.pi  * ne * tde * freq / (3e8) #1/m
+        
+        Potrans =  1 - np.exp(-ao * self.thickness) 
+        Petrans =  1 - np.exp(-ae * self.thickness)
+        pemis = abs(Petrans - Potrans) / 2            
+        return pemis
+
         
     def Ip(self, freq):
         return 0
@@ -290,20 +306,46 @@ def calcHWPSSCoeffs(theta = 0.0, reflected = False, band = "MF"):
 
 
 if __name__ == "__main__":
-    pass
-
+    HWP_dir = "/Users/jacoblashner/so/HWPSS-prediction/HWP/4LayerSapphire/MF/"
+    datadir = os.path.join(HWP_dir, "test")
+    band = "MF"
     
-   # for theta in [0, 20]:#range(21):
-   #     path = datadir + "%d_deg/"%(theta)
-   #
-   #     if (os.path.exists(os.path.join(path, "Refl.npy"))):
-   #         print("Skipping")
-   #         continue
-   #     os.makedirs(path, exist_ok = True)
-   #
-   #     data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = False, band = band)
-   #     plt.plot(data[1], data[5])
-   #     np.save(path + "Trans", data)
-   #     plt.plot(data[1], data[5])
-   #     data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = True, band = band)
-   #     np.save(path + "Refl", data)
+    mats = loadMaterials(os.path.join(HWP_dir, "materials.txt"))
+    stack = loadStack(mats, os.path.join(HWP_dir, "stack.txt"))
+    
+    freqs = np.linspace(1*GHz, 300*GHz, 200)
+#    muellers = []
+#    for freq in freqs:
+#        M = tm.Mueller(stack, freq, 0.0, 0.0 , reflected = False)
+#        muellers.append(M)
+#    
+#
+#    fig, axes = plt.subplots(4, 4, sharex = True, sharey = True)
+#    for i in range(4):
+#        for j in range(4):
+#            axes[i,j].plot(freqs, [m[i,j] for m in muellers])
+#
+#    
+#
+#    
+#    
+#    print(stack)    
+#    
+#    
+    for theta in [0, 20]:#range(21):
+        path = os.path.join(datadir, "{}_deg".format(theta))
+        
+        if (os.path.exists(os.path.join(path, "Refl.npy"))):
+            print("Skipping")
+            continue
+        os.makedirs(path, exist_ok = True)
+   
+        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = False, band = band)
+        plt.plot(data[1], data[5])
+        trans_fname = os.path.join(path, "Trans")
+        np.save(trans_fname, data)
+        plt.plot(data[1], data[5])
+        
+        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = True, band = band)
+        refl_fname = os.path.join(path, "Refl")
+        np.save(refl_fname, data)
