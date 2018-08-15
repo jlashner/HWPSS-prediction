@@ -17,7 +17,7 @@ This is dependent on the tmm package. You can easily install it through pip.
 To start the code, a Telescope object must be created. 
 In the Telescope, data from config files are loaded and a list containing each element in the optical chain is loaded. Light is propagated through the telescope, and A2, A4, a2, and a4 are all calculated. Output files which give HWPSS signals and the contribution from each optical element can be generated to a specified directory.
 
-##Input
+## Input
 
 As input, the code requires:
 
@@ -28,3 +28,6 @@ As input, the code requires:
 - `bandID`: The channel of the detector file being used. (1 or 2).
 
 These are passed as a dictionary to to Telescope when initialized. A sample config file can be found in `/run/config.json`.  
+
+## Running the code 
+You can run Telescope.py to find 
