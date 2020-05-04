@@ -1,0 +1,30 @@
+lines.linewidth: 3
+
+text.usetex: True
+font.family: serif
+
+xtick.labelsize: 30
+xtick.major.size: 10
+xtick.major.width: 1
+xtick.major.pad: 5
+xtick.minor.size: 5
+xtick.minor.width: 1
+xtick.bottom: True
+xtick.top: True
+xtick.direction: in
+
+ytick.labelsize: 30
+ytick.major.size: 10
+ytick.major.width: 1
+ytick.major.pad: 5
+ytick.minor.size: 5
+ytick.minor.width: 1
+ytick.left: True
+ytick.right: True
+ytick.direction: in
+
+legend.fontsize: 30
+legend.borderaxespad: 1
+
+axes.labelsize: 40
+axes.titlesize: 30

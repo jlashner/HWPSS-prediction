@@ -1,0 +1,11 @@
+##	name		no			ne			lossTan_o		lossTan_e		type
+##										[1e-4]			[1e-4]
+	Sapphire	3.05		3.38		0.02			0.01			uniaxial
+#	AR1			1.55		1.55		0.5				0.5				isotropic
+#	AR2			2.52		2.52		56.5			56.5			isotropic		
+	PTFE		1.20		1.20		0.0				0.0				isotropic
+	RO3003		1.77		1.77		0.0				0.0				isotropic
+	RO3006		2.86		2.86		0.00			0.0				isotropic
+	Sty_1090	1.44		1.44		0.0				0.0				isotropic
+	Sty_2850FT	2.24		2.24		0.0				0.0				isotropic
+

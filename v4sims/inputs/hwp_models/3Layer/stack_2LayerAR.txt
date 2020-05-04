@@ -1,0 +1,9 @@
+##	name 		thickness		angle
+##				[mm]			[deg]
+Sty_1090		0.432			0.00
+Sty_2850FT		0.279			0.00
+Sapphire		3.75			0.0
+Sapphire		3.75			54
+Sapphire		3.75			0.0
+Sty_2850FT		0.279			0.00
+Sty_1090		0.432			0.00

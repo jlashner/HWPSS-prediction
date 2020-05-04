@@ -1,0 +1,11 @@
+##	name 		thickness		angle
+##				[mm]			[deg]
+PTFE			0.434			0.00
+RO3003			0.279			0.00
+RO3006			0.199			0.00
+Sapphire		3.75			0.0
+Sapphire		3.75			54
+Sapphire		3.75			0.0
+RO3006			0.199			0.00
+RO3003			0.279			0.00
+PTFE			0.434			0.00
