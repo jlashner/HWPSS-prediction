@@ -98,8 +98,8 @@ class HWP:
         self.thickness = 0.003
         self.thickness = sum(self.stack.thicknesses[2:-2] )
         
-        _, fs, A2upT, A4upT, A2ppT, A4ppT = np.load(HWPSS_transFile)
-        _, _, A2upR, A4upR, A2ppR, A4ppR = np.load(HWPSS_reflFile)
+        _, fs, A2upT, A4upT, A2ppT, A4ppT = np.load(HWPSS_transFile, allow_pickle=True)
+        _, _, A2upR, A4upR, A2ppR, A4ppR = np.load(HWPSS_reflFile, allow_pickle=True)
         
 
         # Resample fns to have same length as detector frequency
@@ -116,8 +116,8 @@ class HWP:
             self.A2ppR.append(abs(np.interp(f, fs, A2ppR)))
             self.A4ppR.append(abs(np.interp(f, fs, A4ppR)))
         
-        self.A2upT, self.A4upT, self.A2ppT, self.A4ppT = map(np.array,  [self.A2upT, self.A4upT, self.A2ppT, self.A4ppT])
-        self.A2upR, self.A4upR, self.A2ppR, self.A4ppR = map(np.array,  [self.A2upR, self.A4upR, self.A2ppR, self.A4ppR])
+        self.A2upT, self.A4upT, self.A2ppT, self.A4ppT = list(map(np.array,  [self.A2upT, self.A4upT, self.A2ppT, self.A4ppT]))
+        self.A2upR, self.A4upR, self.A2ppR, self.A4ppR = list(map(np.array,  [self.A2upR, self.A4upR, self.A2ppR, self.A4ppR]))
         self.p = None
         
 

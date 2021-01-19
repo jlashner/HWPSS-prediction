@@ -15,14 +15,14 @@ This data is required for the HWPSS prediction.
 """
 
 import numpy as np
-import thermo as th
+from . import thermo as th
 from scipy import interpolate
 from scipy import optimize
 from scipy import integrate as intg
 import matplotlib.pyplot as plt
-import transfer_matrix as tm
-from HWP_model import loadMaterials, loadStack
-import Telescope as tp
+from . import transfer_matrix as tm
+from .HWP_model import loadMaterials, loadStack
+from . import Telescope as tp
 import os
 import json
 import logging as log
@@ -79,7 +79,7 @@ def fitAmplitudesBand(stack, freqs, theta, stokes, reflected = False):
     popt = None
     A2 = []
     A4 = []
-    print("Fitting amplitude band: theta = %.1f, reflected=%s, stokes = %s"%(theta, reflected, str(stokes)))
+    print(("Fitting amplitude band: theta = %.1f, reflected=%s, stokes = %s"%(theta, reflected, str(stokes))))
     for f in tqdm(freqs):
 #        print(f/ GHz)
         popt = fitAmplitudes(stack, f, theta, stokes = stokes, reflected = reflected, p = popt)

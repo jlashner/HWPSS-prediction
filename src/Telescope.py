@@ -228,11 +228,11 @@ class Telescope:
 #       
 #        plt.plot(self.freqs, A4TSpec / self.cumEff(self.freqs))
         
-        print("A2 from Transmission: %f"%(th.powFromSpec(self.freqs, A2TSpec)* self.toKcmb * 2 / self.cumEff(self.det.band_center)))
-        print("A2 from Reflection: %f"%(th.powFromSpec(self.freqs, A2RSpec)* self.toKcmb * 2 / self.cumEff(self.det.band_center)))
-        print("A2 from Emission: %f"%(th.powFromSpec(self.freqs, A2emitted)* self.toKcmb * 2 / self.cumEff(self.det.band_center)))
-        print("A4 from transmission: %f"%(th.powFromSpec(self.freqs, test)* self.toKcmb * 2 / self.cumEff(self.det.band_center)))
-        print("A4 from Reflection: %f"%(th.powFromSpec(self.freqs, A4RSpec)* self.toKcmb * 2 / self.cumEff(self.det.band_center)))
+        print(("A2 from Transmission: %f"%(th.powFromSpec(self.freqs, A2TSpec)* self.toKcmb * 2 / self.cumEff(self.det.band_center))))
+        print(("A2 from Reflection: %f"%(th.powFromSpec(self.freqs, A2RSpec)* self.toKcmb * 2 / self.cumEff(self.det.band_center))))
+        print(("A2 from Emission: %f"%(th.powFromSpec(self.freqs, A2emitted)* self.toKcmb * 2 / self.cumEff(self.det.band_center))))
+        print(("A4 from transmission: %f"%(th.powFromSpec(self.freqs, test)* self.toKcmb * 2 / self.cumEff(self.det.band_center))))
+        print(("A4 from Reflection: %f"%(th.powFromSpec(self.freqs, A4RSpec)* self.toKcmb * 2 / self.cumEff(self.det.band_center))))
 
         
         # A2 and A4 signals seen by detector
@@ -310,10 +310,10 @@ if __name__=="__main__":
     config["Reflection Order"] = 10
     tel = Telescope(config)
 
-    print("\n HWPSS output\n" + "-"* 20)
-    print("A2: %f K_cmb"%(tel.A2_Kcmb))
-    print("a2: %f %%"%(tel.a2 * 100))
-    print("A4: %f K_cmb"%(tel.A4_Kcmb))
-    print("a4: %f %%"%(tel.a4 * 100))
-    print("-"*20)
+    print(("\n HWPSS output\n" + "-"* 20))
+    print(("A2: %f K_cmb"%(tel.A2_Kcmb)))
+    print(("a2: %f %%"%(tel.a2 * 100)))
+    print(("A4: %f K_cmb"%(tel.A4_Kcmb)))
+    print(("a4: %f %%"%(tel.a4 * 100)))
+    print(("-"*20))
     
