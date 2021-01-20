@@ -11,7 +11,7 @@ import thermo as th
 import numpy as np
 import matplotlib.pyplot as plt
 import json
-from StringIO import StringIO
+from io import StringIO
 
 pW = 10 ** 12
 GHz = 10**9
@@ -25,11 +25,11 @@ config["bandID"] = 2
 config["ExperimentDirectory"] = "../Experiments/V3/MF_baseline/SmallTelescope"
 config["HWPDirectory"] = "../HWP/4LayerSapphire"    
 config["Reflection Order"] = 10
-tel = Telescope(config)
+tel = tp.Telescope(config)
 
-print("\n HWPSS output\n" + "-"* 20)
-print("A2: %f K_cmb"%(tel.A2_Kcmb))
-print("a2: %f %%"%(tel.a2 * 100))
-print("A4: %f K_cmb"%(tel.A4_Kcmb))
-print("a4: %f %%"%(tel.a4 * 100))
-print("-"*20)
+print(("\n HWPSS output\n" + "-"* 20))
+print(("A2: %f K_cmb"%(tel.A2_Kcmb)))
+print(("a2: %f %%"%(tel.a2 * 100)))
+print(("A4: %f K_cmb"%(tel.A4_Kcmb)))
+print(("a4: %f %%"%(tel.a4 * 100)))
+print(("-"*20))

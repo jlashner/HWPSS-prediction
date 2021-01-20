@@ -61,5 +61,5 @@ def aniPowSpec(emis, freq, temp=Tcmb):
 
 
 if __name__=="__main__":
-    print(bbSpec(145 * GHz, 100, 1))
+    print((bbSpec(145 * GHz, 100, 1)))
     
