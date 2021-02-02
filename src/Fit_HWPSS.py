@@ -15,14 +15,14 @@ This data is required for the HWPSS prediction.
 """
 
 import numpy as np
-from . import thermo as th
+import thermo as th
 from scipy import interpolate
 from scipy import optimize
 from scipy import integrate as intg
 import matplotlib.pyplot as plt
-from . import transfer_matrix as tm
-from .HWP_model import loadMaterials, loadStack
-from . import Telescope as tp
+import transfer_matrix as tm
+from HWP_model import loadMaterials, loadStack
+import Telescope as tp
 import os
 import json
 import logging as log
@@ -87,7 +87,7 @@ def fitAmplitudesBand(stack, freqs, theta, stokes, reflected = False):
         A4.append(popt[4])
     return np.array(A2), np.array(A4)
 
-def calcHWPSSCoeffs(theta = 0.0, reflected = False, band = "MF"):
+def calcHWPSSCoeffs(stack, theta = 0.0, reflected = False, band = "MF"):
     labels = np.array(["freqs", "A2up", "A4up", "A2pp", "A4pp"])
     
     if band == "LF":
@@ -131,11 +131,11 @@ if __name__ == "__main__":
 #            continue
 #        os.makedirs(path, exist_ok = True)
 #   
-#        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = False, band = band)
+#        data = calcHWPSSCoeffs(stack, theta = np.deg2rad(theta), reflected = False, band = band)
 #        trans_fname = os.path.join(path, "Trans")ls
     
 #        np.save(trans_fname, data)
 #        
-#        data = calcHWPSSCoeffs(theta = np.deg2rad(theta), reflected = True, band = band)
+#        data = calcHWPSSCoeffs(stack, theta = np.deg2rad(theta), reflected = True, band = band)
 #        refl_fname = os.path.join(path, "Refl")
 #        np.save(refl_fname, data)

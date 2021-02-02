@@ -702,3 +702,38 @@ def JonesRotation(jones, theta):
     rot = np.array(((cos(theta*deg),-sin(theta*deg)),(sin(theta*deg),cos(theta*deg))),dtype=np.complex)
 
     return np.dot(rot, np.dot( jones, inv(rot)))
+
+
+#############################################################################################################
+# These functions are not part of the original code, but are added to easily load
+# material and stack files
+############################################################################################################
+
+
+def loadMaterials(matFile):
+    """
+        Loads materials into Tom's code from external file of all applicable materials.
+        These are returned as a dictionary.
+    """
+    mats = {}
+    name, no, ne, lto, lte, mtype = np.loadtxt(matFile, dtype=np.str, unpack=True)
+    no = np.array(list(map(np.float, no)))
+    ne = np.array(list(map(np.float, ne)))
+    lto = 1.0e-4 * np.array(list(map(np.float, lto)))
+    lte = 1.0e-4 * np.array(list(map(np.float, lte)))
+    for (i, n) in enumerate(name):
+        mats[n] = material(no[i], ne[i], lto[i], lte[i], n, mtype[i])
+    return mats
+
+
+def loadStack(materials, stackFile):
+    """
+        Loads a layer stack using materials from input dictionary.
+    """
+    name, thick, angle = np.loadtxt(stackFile, dtype=np.str, unpack=True)
+    mats = [materials[n] for n in name]
+
+    thick = np.array(list(map(np.float, thick))) * 1.e-3
+    angle = np.array(list(map(np.float, angle)))
+    angle = np.deg2rad(angle)
+    return Stack(thick, mats, angle)
