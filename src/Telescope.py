@@ -85,8 +85,9 @@ class Telescope:
         
         # Propagates Unpolarized Spectrum through each element
         self.propSpectrum(ReflectionOrder=self.reflection_order)
-        # Gets A2, A4, a2 and a4
-        self.getHWPSS(fit=False)
+        if config["getHWPSS"]:
+            # Gets A2, A4, a2 and a4
+            self.getHWPSS(fit=False)
 
 #        print self.hwpssTable()
         if config["WriteOutput"]:
