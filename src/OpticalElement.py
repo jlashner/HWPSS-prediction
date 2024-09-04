@@ -149,7 +149,7 @@ class OpticalElement:
 ###############################################################################
 def loadAtm(atmFile, det, toKcmb, toKRJ):
     """Loads an optical element from specified atmosphere file"""
-    freqs, temps, trans = np.loadtxt(atmFile, dtype=np.float, unpack=True, usecols=[0, 2, 3]) #frequency/tempRJ/efficiency arrays from input files
+    freqs, temps, trans = np.loadtxt(atmFile, dtype=np.float64, unpack=True, usecols=[0, 2, 3]) #frequency/tempRJ/efficiency arrays from input files
     freqs*=GHz # [Hz]
 ##    
     atmTemp = 300. # [K]
@@ -218,7 +218,7 @@ def loadOpticalChain(opticsFile, det, hwpDir, theta = np.deg2rad(15./2)):
     
     elements = []
     
-    data = np.loadtxt(opticsFile, dtype=np.str)
+    data = np.loadtxt(opticsFile, dtype=str)
     keys = data[0]
     
     # Units of optical chain columns:

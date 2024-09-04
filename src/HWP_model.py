@@ -34,11 +34,11 @@ def loadMaterials(matFile):
         These are returned as a dictionary.
     """
     mats = {}
-    name, no, ne, lto, lte, mtype = np.loadtxt(matFile, dtype=np.str, unpack=True)
-    no = np.array(list(map(np.float, no)))
-    ne = np.array(list(map(np.float, ne)))
-    lto = 1.0e-4 * np.array(list(map(np.float, lto)))
-    lte = 1.0e-4 * np.array(list(map(np.float, lte)))
+    name, no, ne, lto, lte, mtype = np.loadtxt(matFile, dtype=str, unpack=True)
+    no = np.array(list(map(np.float64, no)))
+    ne = np.array(list(map(np.float64, ne)))
+    lto = 1.0e-4 * np.array(list(map(np.float64, lto)))
+    lte = 1.0e-4 * np.array(list(map(np.float64, lte)))
     for (i,n) in enumerate(name):
         mats[n] = tm.material(no[i], ne[i], lto[i], lte[i], n, mtype[i])
     return mats
@@ -47,11 +47,11 @@ def loadStack(materials, stackFile):
     """
         Loads a layer stack using materials from input dictionary.
     """
-    name, thick, angle = np.loadtxt(stackFile, dtype=np.str, unpack=True)
+    name, thick, angle = np.loadtxt(stackFile, dtype=str, unpack=True)
     mats = [materials[n] for n in name]
     
-    thick = np.array(list(map(np.float, thick))) * 1.e-3
-    angle = np.array(list(map(np.float, angle)))
+    thick = np.array(list(map(np.float64, thick))) * 1.e-3
+    angle = np.array(list(map(np.float64, angle)))
     angle = np.deg2rad(angle)
     return tm.Stack(thick, mats, angle)
 

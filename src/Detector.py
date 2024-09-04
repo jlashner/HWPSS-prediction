@@ -8,14 +8,14 @@ class Detector:
     def __init__(self, channelFile, cameraFile, bandID, config):
         self.bid = bandID
 
-        ch_str = np.loadtxt(channelFile, dtype=np.str)
+        ch_str = np.loadtxt(channelFile, dtype=str)
         self.band_center = float(ch_str[bandID][2])*GHz #[Hz]
         self.fbw = float(ch_str[bandID][3]) #fractional bandwidth
         self.pixSize = float(ch_str[bandID][4])/1000.
         self.waistFact = float(ch_str[bandID][6])
         self.det_eff = float(ch_str[bandID][7])
 
-        cam_str = np.loadtxt(cameraFile, dtype=np.str, usecols=[2])
+        cam_str = np.loadtxt(cameraFile, dtype=str, usecols=[2])
         self.f_num = float(cam_str[2])
         self.bath_temp = float(cam_str[2])
         

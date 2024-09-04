@@ -198,7 +198,7 @@ class transferMatrix(object):
         self.nsin           = nsin
         self.rotation       = rotation
 
-        self.optic_axis     = np.array((cos(rotation),sin(rotation),0),dtype=np.float)
+        self.optic_axis     = np.array((cos(rotation),sin(rotation),0),dtype=np.float64)
 
         # Pull quantities that will show up in equations below.
         chi     = rotation
@@ -238,9 +238,9 @@ class transferMatrix(object):
 
         rot    = np.array(((cos(rotation), -1*sin(rotation),0),\
                         (sin(rotation), cos(rotation), 0),\
-                        (0, 0, 1)), dtype=np.complex)
+                        (0, 0, 1)), dtype=complex)
         rotinv = inv(rot)
-        eps    = np.array(((nE**2, 0, 0),(0, nO**2, 0),(0, 0, nO**2)), dtype=np.complex)
+        eps    = np.array(((nE**2, 0, 0),(0, nO**2, 0),(0, 0, nO**2)), dtype=complex)
         roteps = np.dot( rot, np.dot( eps, rotinv))
         rotepsinv = inv(roteps)
         self.dielectric_tensor = roteps
@@ -257,7 +257,7 @@ class transferMatrix(object):
         DenomDOrd = sqrt( cos(thetaO)**2 + sin(thetaO)**2 * sin(chi)**2)
         DOrd      = np.array(( -1*sin(chi)*cos(thetaO), \
                                cos(chi)*cos(thetaO), \
-                               sin(chi)*sin(thetaO)), dtype=np.complex)
+                               sin(chi)*sin(thetaO)), dtype=complex)
         DOrd      = DOrd / DenomDOrd
         self.DOrd = DOrd
         self.EOrd = np.dot(roteps, DOrd)
@@ -267,7 +267,7 @@ class transferMatrix(object):
         DenomDExtra = sqrt( cos(chi)**2 *cos(thetaO)**2 + sin(chi)**2 * cos(thetaO-thetaE)**2)
         DExtra      = np.array(( 1*cos(chi)*cos(thetaO)*cos(thetaE), \
                                  1*sin(chi)*( sin(thetaO)*sin(thetaE) + cos(thetaO)*cos(thetaE)),\
-                                 - cos(chi)*cos(thetaE)*sin(thetaO)), dtype=np.complex)
+                                 - cos(chi)*cos(thetaE)*sin(thetaO)), dtype=complex)
         DExtra      = DExtra / DenomDExtra
         self.DExtra = DExtra
         self.EExtra = np.dot(roteps, DExtra)
@@ -276,7 +276,7 @@ class transferMatrix(object):
         DenomHOrd = sqrt(cos(thetaO)**2 * cos(chi)**2 + sin(chi)**2)
         HOrd      = np.array(( -cos(thetaO)**2 * cos(chi),\
                                -sin(chi),\
-                               cos(thetaO)*sin(thetaO)*cos(chi)), dtype=np.complex)
+                               cos(thetaO)*sin(thetaO)*cos(chi)), dtype=complex)
         HOrd      = HOrd / DenomHOrd
         self.HOrd = HOrd
 
@@ -285,7 +285,7 @@ class transferMatrix(object):
         HExtra      = np.array(( -cos(thetaO-thetaE) * cos(thetaE) * sin(chi),\
                                  1*cos(thetaO)*cos(chi),\
                                  1*cos(thetaO-thetaE) * sin(thetaE) * sin(chi)),\
-                               dtype=np.complex)
+                               dtype=complex)
         HExtra      = HExtra / DenomHExtra
         self.HExtra = HExtra
 
@@ -306,7 +306,7 @@ class transferMatrix(object):
                         (HOrd[1]/nO, HExtra[1]/nE, -1*HOrd[1]/nO, -1*HExtra[1]/nE),\
                         (DOrd[1], DExtra[1], DOrd[1], DExtra[1]),\
                         (-1*HOrd[0]/nO, -1*HExtra[0]/nE, HOrd[0]/nO, HExtra[0]/nE)),\
-                      dtype=np.complex)
+                      dtype=complex)
 
         # Form the matrix relating vII = (Dx,Hy,Dy,-Hx) at interface II to the four
         # D components at the interface in the material. These are formed
@@ -326,13 +326,13 @@ class transferMatrix(object):
         P  = np.array( ((exp(-1*deltaO), 0, 0, 0),\
                         (0, exp(-1*deltaE), 0, 0),\
                         (0, 0, exp(deltaO), 0),\
-                        (0, 0, 0, exp(deltaE))), dtype=np.complex)
+                        (0, 0, 0, exp(deltaE))), dtype=complex)
 
         # Define the conversion matrix from D field components to those of E.
         Psi = np.array( ((rotepsinv[0,0], 0, rotepsinv[0,1], 0),\
                         (0, 1, 0, 0),\
                         (rotepsinv[1,0], 0, rotepsinv[1,1], 0),\
-                        (0, 0, 0, 1)), dtype=np.complex)
+                        (0, 0, 0, 1)), dtype=complex)
 
         # Now compute the transfer matrix as Psi.Phi.inv(Psi.Phi.P)
         self.Phi = Phi
@@ -374,7 +374,7 @@ class stackTransferMatrix(object):
         angles      = stack.angles
 
         self.transfers = []
-        self.totalTransfer = np.eye(4, dtype=np.complex)
+        self.totalTransfer = np.eye(4, dtype=complex)
 
         for layerNum in range(numLayers):
             material      = materials[layerNum]
@@ -432,12 +432,12 @@ def TranToJones(transfer):
     denom = (A+C)*(K+S)-(B+D)*(N+P) # Both matrices share a factor dividing all elements.
 
     # Transmitted Jones matrix.
-    Jtran = np.array(((K+S, -B-D),(-N-P, A+C)), dtype=np.complex) * 2 / denom
+    Jtran = np.array(((K+S, -B-D),(-N-P, A+C)), dtype=complex) * 2 / denom
 
     # Reflected Jones matrix.
     Jref = np.array(( ((C-A)*(K+S)-(D-B)*(N+P), 2*(A*D - C*B)),\
                       (2*(N*S - P*K), (A+C)*(K-S) - (D+B)*(N-P))),\
-                    dtype=np.complex) / denom
+                    dtype=complex) / denom
 
     return Jtran, Jref
 
@@ -453,13 +453,13 @@ def JonesToMueller(jones):
     # Stokes parameters. Note that to match up with Polarized Light by Goldstein,
     # I had to multiply the last Pauli matrix by -1, a change from the Jones et al paper.
     Sigma = []
-    Sigma.append( np.array(( (1,0),(0,1)), dtype=np.complex)) # identity matrix
-    Sigma.append( np.array(( (1,0),(0,-1)), dtype=np.complex))
-    Sigma.append( np.array(( (0,1),(1,0)), dtype=np.complex))
-    Sigma.append( np.array(( (0,-1j),(1j,0)), dtype=np.complex)) # Need to multiply by -1 to change back to normal.
+    Sigma.append( np.array(( (1,0),(0,1)), dtype=complex)) # identity matrix
+    Sigma.append( np.array(( (1,0),(0,-1)), dtype=complex))
+    Sigma.append( np.array(( (0,1),(1,0)), dtype=complex))
+    Sigma.append( np.array(( (0,-1j),(1j,0)), dtype=complex)) # Need to multiply by -1 to change back to normal.
 
     # Now the Mueller matrix elements are given by Mij = 1/2 * Tr(sigma[i]*J*sigma[j]*J^dagger)
-    m = np.zeros((4,4), dtype=np.float)
+    m = np.zeros((4,4), dtype=np.float64)
 
     for i in range(4):
         for j in range(4):
@@ -557,25 +557,25 @@ def BandAveragedMueller( stack, spectrumFile, minFreq, maxFreq, reflected=False,
     against the detector passband and the spectrum of the source being observed.
     """
 
-    frequencies = minFreq + np.arange(numFreqs, dtype=np.float) * (maxFreq - minFreq)/numFreqs
+    frequencies = minFreq + np.arange(numFreqs, dtype=np.float64) * (maxFreq - minFreq)/numFreqs
 
     # Create arrays to hold the Mueller-matrix elements at each frequency.
-    MuellerII = np.zeros(numFreqs, dtype=np.float)
-    MuellerIU = np.zeros(numFreqs, dtype=np.float)
-    MuellerIQ = np.zeros(numFreqs, dtype=np.float)
-    MuellerIV = np.zeros(numFreqs, dtype=np.float)
-    MuellerQI = np.zeros(numFreqs, dtype=np.float)
-    MuellerQU = np.zeros(numFreqs, dtype=np.float)
-    MuellerQQ = np.zeros(numFreqs, dtype=np.float)
-    MuellerQV = np.zeros(numFreqs, dtype=np.float)
-    MuellerUI = np.zeros(numFreqs, dtype=np.float)
-    MuellerUU = np.zeros(numFreqs, dtype=np.float)
-    MuellerUQ = np.zeros(numFreqs, dtype=np.float)
-    MuellerUV = np.zeros(numFreqs, dtype=np.float)
-    MuellerVI = np.zeros(numFreqs, dtype=np.float)
-    MuellerVQ = np.zeros(numFreqs, dtype=np.float)
-    MuellerVU = np.zeros(numFreqs, dtype=np.float)
-    MuellerVV = np.zeros(numFreqs, dtype=np.float)
+    MuellerII = np.zeros(numFreqs, dtype=np.float64)
+    MuellerIU = np.zeros(numFreqs, dtype=np.float64)
+    MuellerIQ = np.zeros(numFreqs, dtype=np.float64)
+    MuellerIV = np.zeros(numFreqs, dtype=np.float64)
+    MuellerQI = np.zeros(numFreqs, dtype=np.float64)
+    MuellerQU = np.zeros(numFreqs, dtype=np.float64)
+    MuellerQQ = np.zeros(numFreqs, dtype=np.float64)
+    MuellerQV = np.zeros(numFreqs, dtype=np.float64)
+    MuellerUI = np.zeros(numFreqs, dtype=np.float64)
+    MuellerUU = np.zeros(numFreqs, dtype=np.float64)
+    MuellerUQ = np.zeros(numFreqs, dtype=np.float64)
+    MuellerUV = np.zeros(numFreqs, dtype=np.float64)
+    MuellerVI = np.zeros(numFreqs, dtype=np.float64)
+    MuellerVQ = np.zeros(numFreqs, dtype=np.float64)
+    MuellerVU = np.zeros(numFreqs, dtype=np.float64)
+    MuellerVV = np.zeros(numFreqs, dtype=np.float64)
 
     
     # Calculate the Mueller matrix of the stack at each of the frequencies. 
@@ -609,7 +609,7 @@ def BandAveragedMueller( stack, spectrumFile, minFreq, maxFreq, reflected=False,
     # Now read in the spectrum from the file.
     specFile = open( spectrumFile, 'r')
     specText = specFile.readlines()
-    spectrumData = np.zeros((2,len(specText)-2), dtype=np.float)
+    spectrumData = np.zeros((2,len(specText)-2), dtype=np.float64)
 
 
     # Clip the first two lines of the spectrum. These are descriptive text.
@@ -637,7 +637,7 @@ def BandAveragedMueller( stack, spectrumFile, minFreq, maxFreq, reflected=False,
     else:
         bandFile = open( passBandFile, 'r')
         bandText = bandFile.readlines()
-        passBandData = np.zeros( (2,len(bandText)-2), dtype=np.float)
+        passBandData = np.zeros( (2,len(bandText)-2), dtype=np.float64)
 
         for j in range(2, len(bandText)):
             freq, band = bandText[j].split()
@@ -692,13 +692,13 @@ def BandAveragedMueller( stack, spectrumFile, minFreq, maxFreq, reflected=False,
          (IntegratedMuellerQI,IntegratedMuellerQQ,IntegratedMuellerQU,IntegratedMuellerQV),\
          (IntegratedMuellerUI,IntegratedMuellerUQ,IntegratedMuellerUU,IntegratedMuellerUV),\
          (IntegratedMuellerVI,IntegratedMuellerVQ,IntegratedMuellerVU,IntegratedMuellerVV)),\
-        dtype=np.float)
+        dtype=np.float64)
 
     return IntegratedMueller
 
 def JonesRotation(jones, theta):
 
-    rot = np.array(((cos(theta*deg),-sin(theta*deg)),(sin(theta*deg),cos(theta*deg))),dtype=np.complex)
+    rot = np.array(((cos(theta*deg),-sin(theta*deg)),(sin(theta*deg),cos(theta*deg))),dtype=complex)
 
     return np.dot(rot, np.dot( jones, inv(rot)))
 
@@ -715,11 +715,11 @@ def loadMaterials(matFile):
         These are returned as a dictionary.
     """
     mats = {}
-    name, no, ne, lto, lte, mtype = np.loadtxt(matFile, dtype=np.str, unpack=True)
-    no = np.array(list(map(np.float, no)))
-    ne = np.array(list(map(np.float, ne)))
-    lto = 1.0e-4 * np.array(list(map(np.float, lto)))
-    lte = 1.0e-4 * np.array(list(map(np.float, lte)))
+    name, no, ne, lto, lte, mtype = np.loadtxt(matFile, dtype=str, unpack=True)
+    no = np.array(list(map(np.float64, no)))
+    ne = np.array(list(map(np.float64, ne)))
+    lto = 1.0e-4 * np.array(list(map(np.float64, lto)))
+    lte = 1.0e-4 * np.array(list(map(np.float64, lte)))
     for (i, n) in enumerate(name):
         mats[n] = material(no[i], ne[i], lto[i], lte[i], n, mtype[i])
     return mats
@@ -729,10 +729,10 @@ def loadStack(materials, stackFile):
     """
         Loads a layer stack using materials from input dictionary.
     """
-    name, thick, angle = np.loadtxt(stackFile, dtype=np.str, unpack=True)
+    name, thick, angle = np.loadtxt(stackFile, dtype=str, unpack=True)
     mats = [materials[n] for n in name]
 
-    thick = np.array(list(map(np.float, thick))) * 1.e-3
-    angle = np.array(list(map(np.float, angle)))
+    thick = np.array(list(map(np.float64, thick))) * 1.e-3
+    angle = np.array(list(map(np.float64, angle)))
     angle = np.deg2rad(angle)
     return Stack(thick, mats, angle)
