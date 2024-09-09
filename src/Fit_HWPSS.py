@@ -103,7 +103,7 @@ def calcHWPSSCoeffs(stack, theta = 0.0, reflected = False, band = "MF"):
     A2up, A4up = fitAmplitudesBand(stack, freqs, theta, stokes = np.array([1,0,0,0]), reflected = reflected)
     A2pp, A4pp = fitAmplitudesBand(stack, freqs, theta, stokes = np.array([1,1,0,0]), reflected = reflected)
     
-    return np.array([labels, freqs, A2up, A4up, A2pp, A4pp])
+    return np.array([labels, freqs, A2up, A4up, A2pp, A4pp], dtype=object)
 
 
 if __name__ == "__main__":
