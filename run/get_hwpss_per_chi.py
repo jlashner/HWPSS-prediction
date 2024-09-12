@@ -146,7 +146,9 @@ def get_telescope(theta_rad, band_id, HWP_dir):
         "getHWPSS": False,
     }
     tel = tp.Telescope(config)
-    return tel
+    config["disable_atmosphere"] = True,
+    tel_wo_atmo = tp.Telescope(config)
+    return tel, tel_wo_atmo
 
 
 def get_per_freq(chis, n_chi, n_stokes, n_freq, tel):
@@ -210,7 +212,14 @@ def get_per_freq(chis, n_chi, n_stokes, n_freq, tel):
     return trans_per_freq, refl_per_freq, emit_per_freq
 
 
-def get_per_chi(n_chi, n_stokes, temperature):
+def get_per_chi(
+        n_chi,
+        n_stokes,
+        temperature,
+        trans_per_freq,
+        refl_per_freq,
+        emit_per_freq,
+):
     trans_per_chi = np.zeros([n_chi, n_stokes])
     refl_per_chi = np.zeros([n_chi, n_stokes])
     emit_per_chi = np.zeros([n_chi, n_stokes])
@@ -225,11 +234,22 @@ def get_per_chi(n_chi, n_stokes, temperature):
 
 
 def cache_results(
-    all_stokes, i_theta, trans_per_chi, refl_per_chi, emit_per_chi, fname_db
+        all_stokes,
+        i_theta,
+        profiles_wo_atmo,
+        profiles_atmo,
+        fname_db,
 ):
-    all_stokes[band_name]["transmission"][i_theta] = trans_per_chi
-    all_stokes[band_name]["reflection"][i_theta] = refl_per_chi
-    all_stokes[band_name]["emission"][i_theta] = emit_per_chi
+    (trans_per_chi_wo_atmo, refl_per_chi_wo_atmo, emit_per_chi_wo_atmo) = profiles_wo_atmo
+    (trans_per_chi_atmo, refl_per_chi_atmo, emit_per_chi_atmo) = profiles_atmo
+
+    all_stokes[band_name]["transmission_wo_atmo"][i_theta] = trans_per_chi_wo_atmo
+    all_stokes[band_name]["reflection_wo_atmo"][i_theta] = refl_per_chi_wo_atmo
+    all_stokes[band_name]["emission_wo_atmo"][i_theta] = emit_per_chi_wo_atmo
+
+    all_stokes[band_name]["transmission_atmo"][i_theta] = trans_per_chi_atmo
+    all_stokes[band_name]["reflection_atmo"][i_theta] = refl_per_chi_atmo
+    all_stokes[band_name]["emission_atmo"][i_theta] = emit_per_chi_atmo
 
     with open(fname_db, "wb") as fout:
         pickle.dump([thetas, chis, all_stokes], fout)
@@ -238,7 +258,19 @@ def cache_results(
     return
 
 
-def plot_hwpss(full, trans, refl, emit, hwpmodel, band_name, theta_deg):
+def plot_hwpss(
+        full,
+        trans,
+        refl,
+        emit,
+        hwpmodel,
+        band_name,
+        theta_deg,
+        full_atmo,
+        trans_atmo,
+        refl_atmo,
+        emit_atmo,
+):
 
     fig = plt.figure(figsize=[18, 12])
     fig.suptitle(
@@ -247,28 +279,47 @@ def plot_hwpss(full, trans, refl, emit, hwpmodel, band_name, theta_deg):
     nrow, ncol = 2, 2
     scale = 1e3
     units = "mK_CMB"
+    orig_units = "K_CMB"
 
-    for i, (sig, name) in enumerate(
+    for i, (sig, sig_atmo, name) in enumerate(
         [
-            [full, "Total HWPSS"],
-            [trans, "Transmitted HWPSS"],
-            [refl, "Reflected HWPSS"],
-            [emit, "Emitted HWPSS"],
+            [full, full_atmo, "Total HWPSS"],
+            [trans, trans_atmo, "Transmitted HWPSS"],
+            [refl, refl_atmo, "Reflected HWPSS"],
+            [emit, emit_atmo, "Emitted HWPSS"],
         ]
     ):
         ax = fig.add_subplot(nrow, ncol, 1 + i)
         ax.set_title(name)
         offset = np.round(np.mean(sig), 3)
         ax.plot(
-            chis, (sig[0] - offset) * scale, lw=4, label=f"Full A - {offset} {units}"
+            chis,
+            (sig[0] - offset) * scale,
+            lw=4,
+            label=f"Full A - {offset} {orig_units}",
         )
         ax.plot(
-            chis, (sig[1] - offset) * scale, "--", label=f"Full B - {offset} {units}"
+            chis,
+            (sig[1] - offset) * scale, "--",
+            label=f"Full B - {offset} {orig_units}",
         )
         sig2f, sig4f, sig6f = decompose(chis, sig[0])
         ax.plot(chis, sig2f * scale, label="2f")
         ax.plot(chis, sig4f * scale, label="4f")
         ax.plot(chis, sig6f * scale, label="6f")
+        offset = np.round(np.mean(sig_atmo), 3)
+        ax.plot(
+            chis,
+            (sig_atmo[0] - offset) * scale,
+            lw=4,
+            label=f"Atmo A - {offset} {orig_units}",
+        )
+        ax.plot(
+            chis,
+            (sig_atmo[1] - offset) * scale,
+            "--",
+            label=f"Atmo B - {offset} {orig_units}",
+        )
         ax.legend(loc="upper right")
         ax.set_xlabel("HWP angle")
         ax.set_ylabel(f"[{units}]")
@@ -298,6 +349,45 @@ def load_results(fname_db):
         all_stokes = {}
     return all_stokes
 
+def report_temperatures(tel, tel_wo_atmo):
+    w = temperature(tel.hwp.unpolIncident)
+    wo = temperature(tel_wo_atmo.hwp.unpolIncident)
+    if w != 0: frac = (w - wo) / w
+    else: frac = 1
+    print(f"Incoming unpol {w:.3f}, (w/o atmo {wo:.3f}), atm frac {frac:.3f}")
+
+    w = temperature(tel.hwp.polIncident)
+    wo = temperature(tel_wo_atmo.hwp.polIncident)
+    if w != 0: frac = (w - wo) / w
+    else: frac = 1
+    print(f"Incoming pol {w:.3f}, (w/o atmo {wo:.3f}), atm frac {frac:.3f}")
+
+    w = temperature(tel.hwp.unpolReverse)
+    wo = temperature(tel_wo_atmo.hwp.unpolReverse)
+    if w != 0: frac = (w - wo) / w
+    else: frac = 1
+    print(f"Reflected unpol {w:.3f}, (w/o atmo {wo:.3f}), atm frac {frac:.3f}")
+
+    w = temperature(tel.hwp.polReverse)
+    wo = temperature(tel_wo_atmo.hwp.polReverse)
+    if w != 0: frac = (w - wo) / w
+    else: frac = 1
+    print(f"Reflected pol {w:.3f}, (w/o atmo {wo:.3f}), atm frac {frac:.3f}")
+
+    w = temperature(tel.hwp.unpolEmitted)
+    wo = temperature(tel_wo_atmo.hwp.unpolEmitted)
+    if w != 0: frac = (w - wo) / w
+    else: frac = 1
+    print(f"Emitted unpol {w:.3f}, (w/o atmo {wo:.3f}), atm frac {frac:.3f}")
+
+    w = temperature(tel.hwp.polEmitted)
+    wo = temperature(tel_wo_atmo.hwp.polEmitted)
+    if w != 0: frac = (w - wo) / w
+    else: frac = 1
+    print(f"Emitted pol {w:.3f}, (w/o atmo {wo:.3f}), atm frac {frac:.3f}")
+
+    return
+
 
 all_stokes = load_results(fname_db)
 
@@ -316,17 +406,20 @@ for band in bands:
             # Ensure the HWPSS is evaluated
             fit_hwpss(HWP_data_dir, theta_deg)
 
-            tel = get_telescope(theta_rad, band_id, HWP_dir)
+            tel, tel_wo_atmo = get_telescope(theta_rad, band_id, HWP_dir)
             band_center_ghz = int(tel.det.band_center * 1e-9)
             band_name = f"{band_center_ghz:03}"
             if band_name not in all_stokes:
                 all_stokes[band_name] = {
-                    "transmission": np.zeros([n_theta, n_chi, n_stokes]),
-                    "reflection": np.zeros([n_theta, n_chi, n_stokes]),
-                    "emission": np.zeros([n_theta, n_chi, n_stokes]),
+                    "transmission_wo_atmo": np.zeros([n_theta, n_chi, n_stokes]),
+                    "reflection_wo_atmo": np.zeros([n_theta, n_chi, n_stokes]),
+                    "emission_wo_atmo": np.zeros([n_theta, n_chi, n_stokes]),
+                    "transmission_atmo": np.zeros([n_theta, n_chi, n_stokes]),
+                    "reflection_atmo": np.zeros([n_theta, n_chi, n_stokes]),
+                    "emission_atmo": np.zeros([n_theta, n_chi, n_stokes]),
                 }
             else:
-                if np.any(all_stokes[band_name]["transmission"][i_theta] != 0):
+                if np.any(all_stokes[band_name]["transmission_atmo"][i_theta] != 0):
                     print(f"{band_name} {theta_deg} already evaluated")
                     continue
             print(
@@ -339,16 +432,38 @@ for band in bands:
             def temperature(ps):
                 return th.powFromSpec(tel.freqs, ps * eff) * tel.toKcmb * 2 / eff_center
 
-            print("Incoming unpol:", temperature(tel.hwp.unpolIncident))
-            print("Incoming pol:", temperature(tel.hwp.polIncident))
-            print("Reflected unpol", temperature(tel.hwp.unpolReverse))
-            print("Reflected pol:", temperature(tel.hwp.polReverse))
-            print("Emitted unpol:", temperature(tel.hwp.unpolEmitted))
-            print("Emitted pol", temperature(tel.hwp.polEmitted))
+            # Measure the fraction of each HWPSS component due to atmosphere
+
+            report_temperatures(tel, tel_wo_atmo)
 
             # Calculate a Mueller matrix for each frequency and rotation angle
 
             n_freq = len(tel.hwp.freqs)
+
+            # Chi profiles without atmosphere
+
+            (
+                trans_per_freq_wo_atmo, refl_per_freq_wo_atmo, emit_per_freq_wo_atmo
+            ) = get_per_freq(
+                chis,
+                n_chi,
+                n_stokes,
+                n_freq,
+                tel_wo_atmo,
+            )
+
+            (
+                trans_per_chi_wo_atmo, refl_per_chi_wo_atmo, emit_per_chi_wo_atmo
+            ) = get_per_chi(
+                n_chi,
+                n_stokes,
+                temperature,
+                trans_per_freq_wo_atmo,
+                refl_per_freq_wo_atmo,
+                emit_per_freq_wo_atmo,
+            )
+
+            # Chi profiles with atmosphere
 
             trans_per_freq, refl_per_freq, emit_per_freq = get_per_freq(
                 chis,
@@ -359,21 +474,65 @@ for band in bands:
             )
 
             trans_per_chi, refl_per_chi, emit_per_chi = get_per_chi(
-                n_chi, n_stokes, temperature
+                n_chi,
+                n_stokes,
+                temperature,
+                trans_per_freq,
+                refl_per_freq,
+                emit_per_freq,
             )
 
+            # Chi profiles due to atmosphere
+
+            trans_per_chi_atmo = trans_per_chi - trans_per_chi_wo_atmo
+            refl_per_chi_atmo = refl_per_chi - refl_per_chi_wo_atmo
+            emit_per_chi_atmo = emit_per_chi - emit_per_chi_wo_atmo
+
+            # Save the HWPSS due to atmosphere separate from the rest
+
             cache_results(
-                all_stokes, i_theta, trans_per_chi, refl_per_chi, emit_per_chi, fname_db
+                all_stokes,
+                i_theta,
+                (trans_per_chi_wo_atmo, refl_per_chi_wo_atmo, emit_per_chi_wo_atmo),
+                (trans_per_chi_atmo, refl_per_chi_atmo, emit_per_chi_atmo),
+                fname_db,
             )
+
+            # Plot the results as a diagnostic
 
             trans = np.zeros([n_det, n_chi])
             refl = np.zeros([n_det, n_chi])
             emit = np.zeros([n_det, n_chi])
+            trans_atmo = np.zeros([n_det, n_chi])
+            refl_atmo = np.zeros([n_det, n_chi])
+            emit_atmo = np.zeros([n_det, n_chi])
             for i_det in range(n_det):
                 for i_chi in range(n_chi):
                     trans[i_det, i_chi] = np.dot(m_det[i_det], trans_per_chi[i_chi])[0]
                     refl[i_det, i_chi] = np.dot(m_det[i_det], refl_per_chi[i_chi])[0]
                     emit[i_det, i_chi] = np.dot(m_det[i_det], emit_per_chi[i_chi])[0]
+                    trans_atmo[i_det, i_chi] = np.dot(
+                        m_det[i_det], trans_per_chi_atmo[i_chi]
+                    )[0]
+                    refl_atmo[i_det, i_chi] = np.dot(
+                        m_det[i_det], refl_per_chi_atmo[i_chi]
+                    )[0]
+                    emit_atmo[i_det, i_chi] = np.dot(
+                        m_det[i_det], emit_per_chi_atmo[i_chi]
+                    )[0]
             full = trans + refl + emit
+            full_atmo = trans_atmo + refl_atmo + emit_atmo
 
-            plot_hwpss(full, trans, refl, emit, hwpmodel, band_name, theta_deg)
+            plot_hwpss(
+                full,
+                trans,
+                refl,
+                emit,
+                hwpmodel,
+                band_name,
+                theta_deg,
+                full_atmo,
+                trans_atmo,
+                refl_atmo,
+                emit_atmo,
+            )
