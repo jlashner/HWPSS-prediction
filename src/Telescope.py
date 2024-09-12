@@ -69,7 +69,8 @@ class Telescope:
         self.elements = [] 
     
         self.elements.append(opt.OpticalElement("CMB", self.det, 2.725, {"Absorb": 1}))        
-        self.elements.append(opt.loadAtm(atmFile, self.det, self.toKcmb, self.toKRJ))    
+        if "disable_atmosphere" not in config or not config["disable_atmosphere"]:
+            self.elements.append(opt.loadAtm(atmFile, self.det, self.toKcmb, self.toKRJ))
         self.elements += opt.loadOpticalChain(opticsFile, self.det, hwpDir , theta=config["theta"])       
         self.elements.append(opt.OpticalElement("Detector", self.det, self.det.bath_temp, {"Absorb": 1 - self.det.det_eff})) 
         
